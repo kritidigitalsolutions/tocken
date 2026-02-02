@@ -212,7 +212,7 @@ exports.uploadPhotos = async (req, res) => {
     }
 
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ success: false, message: "No files uploaded" });
+      return res.status(200).json({ success: true, message: "Without image, Property hase succsessfully uploaded." });
     }
 
     // Initialize images array if not exists

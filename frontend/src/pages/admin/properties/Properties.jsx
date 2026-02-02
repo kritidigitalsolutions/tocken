@@ -619,7 +619,8 @@ const Properties = () => {
                 <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
                   <h4 className={`text-sm font-semibold mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Photos</h4>
                   <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                    No images available (images: {JSON.stringify(propertyDetails?.images)})
+                    No images available !
+                     {/* (images: {JSON.stringify(propertyDetails?.images)}) */}
                   </p>
                 </div>
               )}

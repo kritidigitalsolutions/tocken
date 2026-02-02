@@ -6,7 +6,7 @@ const furnishingSchema = {
   type: {
     type: String,
     // enum: ["none", "semiFurnished", "fullyFurnished"],
-    default: "none"
+    // default: "none"
   },
   amenities: [
     {
@@ -28,15 +28,15 @@ const parkingSchema = {
 const areaSchema = {
   builtUp: {
     value: Number,
-    // unit: { type: String, enum: ["sqft", "sqm"] }
+    unit: String, 
   },
   carpet: {
     value: Number,
-    // unit: { type: String, enum: ["sqft", "sqm"] }
+    unit: String, 
   },
   plot: {
     value: Number,
-    // unit: { type: String, enum: ["sqft", "sqm"] },
+    value: Number,
     length: Number,
     width: Number,
     roadWidth: Number
@@ -98,7 +98,7 @@ const propertySchema = new mongoose.Schema(
       yourFloor: Number,
       isBroker: Boolean,
       preferredTenants: [String],
-      availableFrom: Date,
+      availableFrom: String,
 
       // Geospatial coordinates for nearby search
       coordinates: {
@@ -195,7 +195,7 @@ const propertySchema = new mongoose.Schema(
       totalFloors: Number,
       yourFloor: Number,
       isBroker: Boolean,
-      availableFrom: Date
+      availableFrom: String
     },
 
     /* ===== PG ===== */
@@ -247,14 +247,14 @@ const propertySchema = new mongoose.Schema(
       name: String,
       mobileNumber: String,
       isPhonePrivate: { type: Boolean, default: false },
-      dateOfBirth: Date,
+      dateOfBirth: String,
       gender: String,
       occupation: String,
       occupationName: String,
       languages: String,
       hobbies: String,
-      lookingToShiftBy: Date,
-      availableFrom: Date,
+      lookingToShiftBy: String,
+      availableFrom: String,
       bhk: String,
       furnishing: furnishingSchema,
       roomDetails: [String],
@@ -262,7 +262,6 @@ const propertySchema = new mongoose.Schema(
       yourFloor: Number,
       amenities: [String],
 // 
-      lookingToShiftBy: Date,
       budgetRange: {
         min: Number,
         max: Number
@@ -299,6 +298,7 @@ const propertySchema = new mongoose.Schema(
         pricingRoomtype: String,
         rentAmount: Number,
         leaseAmount: Number,
+        numberOfYearLease: String,
         isElectricity: Boolean,
         isNegotiable: Boolean,
         istaxAndGov: Boolean,
@@ -306,15 +306,15 @@ const propertySchema = new mongoose.Schema(
       },
       salePrice: Number,
 
-      amenities: [
-        {
-          label: String,
-          amount: Number
-        }
-      ],
+      // amenities: [
+      //   {
+      //     label: String,
+      //     amount: Number
+      //   }
+      // ],
 
       securityDeposit: {
-        DepositType: String,
+        depositType: String,
         amount: Number
       },
 

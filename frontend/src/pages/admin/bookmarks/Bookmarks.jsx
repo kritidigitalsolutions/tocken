@@ -92,17 +92,16 @@ const Bookmarks = () => {
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-              selectedCategory === cat
+            className={`px-4 py-2 rounded-full text-sm font-medium transition ${selectedCategory === cat
                 ? "bg-indigo-600 text-white"
-                : isDark 
+                : isDark
                   ? "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white border border-slate-700"
                   : "bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900 border border-gray-200"
-            }`}
+              }`}
           >
             {cat}
           </button>
-        ))})
+        ))}
       </div>
 
       {/* Table */}
@@ -146,30 +145,28 @@ const Bookmarks = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                        item.property?.listingType === "RENT"
+                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${item.property?.listingType === "RENT"
                           ? isDark ? "bg-blue-900 text-blue-300" : "bg-blue-100 text-blue-700"
                           : item.property?.listingType === "SELL"
-                          ? isDark ? "bg-purple-900 text-purple-300" : "bg-purple-100 text-purple-700"
-                          : item.property?.listingType === "LEASE"
-                          ? isDark ? "bg-pink-900 text-pink-300" : "bg-pink-100 text-pink-700"
-                          : isDark ? "bg-indigo-900 text-indigo-300" : "bg-indigo-100 text-indigo-700"
-                      }`}>
+                            ? isDark ? "bg-purple-900 text-purple-300" : "bg-purple-100 text-purple-700"
+                            : item.property?.listingType === "LEASE"
+                              ? isDark ? "bg-pink-900 text-pink-300" : "bg-pink-100 text-pink-700"
+                              : isDark ? "bg-indigo-900 text-indigo-300" : "bg-indigo-100 text-indigo-700"
+                        }`}>
                         {item.property?.listingType || "N/A"}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                        item.property?.propertyType === "RESIDENTIAL"
+                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${item.property?.propertyType === "RESIDENTIAL"
                           ? isDark ? "bg-green-900 text-green-300" : "bg-green-100 text-green-700"
                           : item.property?.propertyType === "COMMERCIAL"
-                          ? isDark ? "bg-orange-900 text-orange-300" : "bg-orange-100 text-orange-700"
-                          : item.property?.propertyType === "PG"
-                          ? isDark ? "bg-yellow-900 text-yellow-300" : "bg-yellow-100 text-yellow-700"
-                          : item.property?.propertyType === "Co-Living"
-                          ? isDark ? "bg-teal-900 text-teal-300" : "bg-teal-100 text-teal-700"
-                          : isDark ? "bg-rose-900 text-rose-300" : "bg-rose-100 text-rose-700"
-                      }`}>
+                            ? isDark ? "bg-orange-900 text-orange-300" : "bg-orange-100 text-orange-700"
+                            : item.property?.propertyType === "PG"
+                              ? isDark ? "bg-yellow-900 text-yellow-300" : "bg-yellow-100 text-yellow-700"
+                              : item.property?.propertyType === "Co-Living"
+                                ? isDark ? "bg-teal-900 text-teal-300" : "bg-teal-100 text-teal-700"
+                                : isDark ? "bg-rose-900 text-rose-300" : "bg-rose-100 text-rose-700"
+                        }`}>
                         {item.property?.propertyType || "N/A"}
                       </span>
                     </td>
@@ -183,7 +180,7 @@ const Bookmarks = () => {
                     <td className="px-6 py-4">
                       <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                         <Calendar size={14} />
-                        {item.property?.createdAt 
+                        {item.property?.createdAt
                           ? new Date(item.property.createdAt).toLocaleDateString()
                           : "N/A"
                         }
@@ -262,11 +259,10 @@ const Bookmarks = () => {
                 </div>
                 <div className={`p-4 rounded-lg ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
                   <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>Status</p>
-                  <span className={`inline-block px-2 py-1 rounded text-sm font-medium mt-1 ${
-                    selectedProperty.status === "ACTIVE"
+                  <span className={`inline-block px-2 py-1 rounded text-sm font-medium mt-1 ${selectedProperty.status === "ACTIVE"
                       ? isDark ? "bg-green-900 text-green-300" : "bg-green-100 text-green-700"
                       : isDark ? "bg-red-900 text-red-300" : "bg-red-100 text-red-700"
-                  }`}>
+                    }`}>
                     {selectedProperty.status}
                   </span>
                 </div>
