@@ -75,9 +75,10 @@ const propertySchema = new mongoose.Schema(
 
     /* ===== RESIDENTIAL ===== */
     residentialDetails: {
+      propertyType: String,
       // for sell property
       constructionStatus: String,
-      expectedTimePossession: String,
+      statusValue: String,
       // for sell property
       ageOfProperty: String,
       bhkType: String,
@@ -116,8 +117,9 @@ const propertySchema = new mongoose.Schema(
 
     /* ===== COMMERCIAL ===== */
     commercialDetails: {
+      propertyType: String,
       constructionStatus: String,
-      ageOfProperty: String,
+      statusValue: String,
       washrooms: String,
       suitableFor: [String],
       locationHub: String,
@@ -126,6 +128,24 @@ const propertySchema = new mongoose.Schema(
         type: String,
         // enum: ["readyToUse", "bareShell"]
       },
+
+      // for Plot/Land
+      plot:{
+        area: Number,
+        unit: String
+      },
+      dimensions: {
+        length: String,
+        width: String,
+        widthOfFacingRoad: String
+       },
+       numberOfOpenSide: String,
+       dueConstruction: String,
+       constructionType: String,
+       boundaryWall: Boolean,
+       cornerPlot: Boolean,
+       BrokerReachOut: Boolean,
+      // end Plot/Land model line
       constructionStatusOfWall: String,
 
       furnishing: furnishingSchema,
@@ -162,13 +182,13 @@ const propertySchema = new mongoose.Schema(
         // Conference Room
         conferenceRoom: {
           isAvailable: Boolean,
-          count: Number
+          count: String
         },
         // Washrooms
         washrooms: {
           isAvailable: Boolean,
-          privateCount: Number,
-          publicCount: Number
+          privateCount: String,
+          publicCount: String
         },
         // Amenities Toggles
         centralAC: Boolean,
@@ -179,16 +199,14 @@ const propertySchema = new mongoose.Schema(
 
       // Lifts
       lifts: {
-        passengerLifts: Number,
-        serviceLifts: Number
+        passengerLifts: String,
+        serviceLifts: String
       },
 
       // Parking
       parking: {
-        isAvailable: Boolean,
-        privateBasement: Number,
-        privateOutside: Number,
-        publicParking: Number,
+        isAvailable: String,
+        parkingType: [String],
         numberOfParking: Number
       },
 
@@ -283,15 +301,19 @@ const propertySchema = new mongoose.Schema(
     pricing: {
       // for sell residential property
       sell:{
+        pricePerSqrFt: Number,
         expectedPrice: Number,
-        PricePerSqFt: Number,
         istaxAndGov: Boolean,
         isUpsAndDg: Boolean,
         isNegotiable: Boolean,
-        hotDeal: Boolean,
-        spacifyDiscount: Number,
-        spacialPricingValid: Date,
-        isFinancing: Boolean,
+        // for plot/Land pricing
+        hotDeal:{
+          isHotDeal: Boolean,
+          spacifyDiscount: Number,
+          spacialPricingValid: String,
+          isFinancing: Boolean,
+        }
+        // for plot/Land pricing end line
       },
       // end sell residential property section
       rent: {
@@ -317,7 +339,7 @@ const propertySchema = new mongoose.Schema(
         depositType: String,
         amount: Number
       },
-
+      
       noticePeriod: Number,
 
       lockInPeriod: {

@@ -13,9 +13,9 @@ exports.sendOTP = async (req, res) => {
 
     // Validate phone number
     if (!phone || phone.trim() === "") {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Phone number required" 
+        message: "Phone number required"
       });
     }
 
@@ -49,7 +49,7 @@ exports.sendOTP = async (req, res) => {
       // APPROVED Template #4 (exact match required):
       // "Dear Customer, Your login OTP is {#var#}. Use this OTP to access your account. Please do not share it with anyone. TOKEN"
       const templateMessage = `Dear Customer, Your login OTP is ${generatedOTP}. Use this OTP to access your account. Please do not share it with anyone. TOKEN`;
-      
+
       // RapidSMS API URL
       const url = new URL('https://1.rapidsms.co.in/api/push');
       url.searchParams.append('apikey', RAPIDSMS_API_KEY);
@@ -98,9 +98,9 @@ exports.sendOTP = async (req, res) => {
 
   } catch (error) {
     console.error("❌ Send OTP Error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: error.message 
+      message: error.message
     });
   }
 };
@@ -115,9 +115,9 @@ exports.verifyOTP = async (req, res) => {
 
     // Validate inputs
     if (!phone || !otp) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Phone number and OTP required" 
+        message: "Phone number and OTP required"
       });
     }
 
@@ -136,9 +136,9 @@ exports.verifyOTP = async (req, res) => {
     });
 
     if (!otpRecord) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Invalid or expired OTP" 
+        message: "Invalid or expired OTP"
       });
     }
 
@@ -160,10 +160,10 @@ exports.verifyOTP = async (req, res) => {
 
     // Existing user - generate token
     const token = jwt.sign(
-      { 
-        id: user._id, 
-        phone: user.phone, 
-        role: "USER" 
+      {
+        id: user._id,
+        phone: user.phone,
+        role: "USER"
       },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
@@ -179,9 +179,9 @@ exports.verifyOTP = async (req, res) => {
 
   } catch (error) {
     console.error("❌ Verify OTP Error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: error.message 
+      message: error.message
     });
   }
 };
@@ -195,9 +195,9 @@ exports.resendOTP = async (req, res) => {
     const { phone } = req.body;
 
     if (!phone) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Phone number required" 
+        message: "Phone number required"
       });
     }
 
@@ -206,9 +206,9 @@ exports.resendOTP = async (req, res) => {
 
   } catch (error) {
     console.error("❌ Resend OTP Error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: error.message 
+      message: error.message
     });
   }
 };
@@ -222,9 +222,9 @@ exports.getProfile = async (req, res) => {
     const user = await User.findById(req.user.id).select("-__v");
 
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "User not found" 
+        message: "User not found"
       });
     }
 
@@ -235,9 +235,9 @@ exports.getProfile = async (req, res) => {
 
   } catch (error) {
     console.error("❌ Get Profile Error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: error.message 
+      message: error.message
     });
   }
 };
