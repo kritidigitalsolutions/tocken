@@ -145,6 +145,9 @@ exports.filterProperties = async (req, res) => {
             // Sorting
             sortBy,             // price_low, price_high, newest, oldest, score
 
+            // Status filter (optional - for admin/testing)
+            status,             // PENDING, ACTIVE, REJECTED, BLOCKED (default: ACTIVE)
+
             // Pagination
             page = 1,
             limit = 20
@@ -152,9 +155,18 @@ exports.filterProperties = async (req, res) => {
 
         // Build query
         const query = {
-            status: "ACTIVE",
             isDeleted: false
         };
+
+        // Status filter - default to ACTIVE for public, but allow override
+        if (status) {
+            // Allow multiple statuses: status=ACTIVE,PENDING
+            const statuses = Array.isArray(status) ? status : status.split(",");
+            query.status = { $in: statuses };
+        } else {
+            // Default: show only ACTIVE properties for public users
+            query.status = "ACTIVE";
+        }
 
         // ===== TAB FILTER =====
         if (listingType) {
@@ -294,16 +306,17 @@ exports.filterProperties = async (req, res) => {
                 query["residentialDetails.furnishing.type"] = { $in: furnishTypes };
             }
 
-            // Property Condition (for Buy)
+            // Property Condition (for Buy - residential)
             if (propertyCondition) {
-                query["commercialDetails.constructionStatus"] = propertyCondition;
+                query["residentialDetails.constructionStatus"] = propertyCondition;
             }
 
-            // Budget filter (RENT = pricing.rent.amount, SELL = pricing.sale.amount)
+            // Budget filter - FIXED: Use correct field paths from model
+            // RENT = pricing.rent.rentAmount, SELL = pricing.sell.expectedPrice
             if (minBudget || maxBudget) {
                 const priceField = listingType === "RENT"
-                    ? "pricing.rent.amount"
-                    : "pricing.sale.amount";
+                    ? "pricing.rent.rentAmount"
+                    : "pricing.sell.expectedPrice";
 
                 if (minBudget && maxBudget) {
                     query[priceField] = {
@@ -317,7 +330,7 @@ exports.filterProperties = async (req, res) => {
                 }
             }
 
-            // Area filter (database field: area.builtUp.value)
+            // Area filter (database field: residentialDetails.area.builtUp.value)
             if (minArea || maxArea) {
                 const areaQuery = {};
                 if (minArea) areaQuery.$gte = parseInt(minArea);
@@ -335,10 +348,12 @@ exports.filterProperties = async (req, res) => {
                 const sharingTypes = Array.isArray(roomSharingType)
                     ? roomSharingType
                     : roomSharingType.split(",");
-                query["pgDetails.roomSharingType"] = { $in: sharingTypes };
+                // FIXED: Model has roomTypes array with sharingType field
+                query["pgDetails.roomTypes.sharingType"] = { $in: sharingTypes };
             }
             if (withMeals === "true") {
-                query["pgDetails.foodIncluded"] = true;
+                // FIXED: Model has food.included (not foodIncluded)
+                query["pgDetails.food.included"] = true;
             }
             if (preferringFor) {
                 const suitedFor = Array.isArray(preferringFor)
@@ -347,12 +362,12 @@ exports.filterProperties = async (req, res) => {
                 query["pgDetails.bestSuitedFor"] = { $in: suitedFor };
             }
 
-            // Budget for PG (database field: pricing.rent.amount)
+            // Budget for PG - FIXED: pricing.rent.rentAmount (not pricing.rent.amount)
             if (minBudget || maxBudget) {
                 const priceQuery = {};
                 if (minBudget) priceQuery.$gte = parseInt(minBudget);
                 if (maxBudget) priceQuery.$lte = parseInt(maxBudget);
-                query["pricing.rent.amount"] = priceQuery;
+                query["pricing.rent.rentAmount"] = priceQuery;
             }
         }
 
@@ -378,41 +393,42 @@ exports.filterProperties = async (req, res) => {
         }
 
         // ===== PLOT/LAND FILTERS =====
+        // FIXED: Plot/Land data is stored in commercialDetails (not plotDetails)
         if (listingType === "PLOT_LAND" || propertyCategory === "Plot/Land") {
             // Plot Type (Residential/Commercial)
             if (propertyType) {
                 query.propertyType = propertyType;
             }
 
-            // Facing
+            // Facing - FIXED: commercialDetails.facing
             if (req.query.facing) {
-                query["plotDetails.facing"] = req.query.facing;
+                query["commercialDetails.facing"] = req.query.facing;
             }
 
-            // Corner Plot
+            // Corner Plot - FIXED: commercialDetails.cornerPlot
             if (req.query.cornerPlot === "true") {
-                query["plotDetails.cornerPlot"] = true;
+                query["commercialDetails.cornerPlot"] = true;
             }
 
-            // Boundary Wall
+            // Boundary Wall - FIXED: commercialDetails.boundaryWall
             if (req.query.boundaryWall === "true") {
-                query["plotDetails.boundaryWall"] = true;
+                query["commercialDetails.boundaryWall"] = true;
             }
 
-            // Plot Area filter
+            // Plot Area filter - FIXED: commercialDetails.plot.area
             if (minArea || maxArea) {
                 const areaQuery = {};
                 if (minArea) areaQuery.$gte = parseInt(minArea);
                 if (maxArea) areaQuery.$lte = parseInt(maxArea);
-                query["plotDetails.plotArea"] = areaQuery;
+                query["commercialDetails.plot.area"] = areaQuery;
             }
 
-            // Budget for Plot/Land
+            // Budget for Plot/Land - FIXED: pricing.sell.expectedPrice
             if (minBudget || maxBudget) {
                 const priceQuery = {};
                 if (minBudget) priceQuery.$gte = parseInt(minBudget);
                 if (maxBudget) priceQuery.$lte = parseInt(maxBudget);
-                query["pricing.salePrice"] = priceQuery;
+                query["pricing.sell.expectedPrice"] = priceQuery;
             }
         }
 
@@ -423,9 +439,9 @@ exports.filterProperties = async (req, res) => {
 
         // ===== COMMON FILTERS =====
 
-        // Only with images
+        // Only with images - FIXED: Model uses 'images' not 'photos'
         if (withImages === "true") {
-            query["photos.0"] = { $exists: true };
+            query["images.0"] = { $exists: true };
         }
 
         // ===== SORTING =====
@@ -433,10 +449,11 @@ exports.filterProperties = async (req, res) => {
 
         switch (sortBy) {
             case "price_low":
-                sortOption = { "pricing.rentAmount": 1, "pricing.salePrice": 1 };
+                // FIXED: Use correct field paths
+                sortOption = { "pricing.rent.rentAmount": 1, "pricing.sell.expectedPrice": 1 };
                 break;
             case "price_high":
-                sortOption = { "pricing.rentAmount": -1, "pricing.salePrice": -1 };
+                sortOption = { "pricing.rent.rentAmount": -1, "pricing.sell.expectedPrice": -1 };
                 break;
             case "newest":
                 sortOption = { createdAt: -1 };

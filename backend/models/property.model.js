@@ -69,8 +69,8 @@ const propertySchema = new mongoose.Schema(
 
     status: {
       type: String,
-      // enum: ["DRAFT", "ACTIVE", "REJECTED", "BLOCKED"],
-      default: "DRAFT"
+      // enum: ["PENDING", "ACTIVE", "REJECTED", "BLOCKED"],
+      default: "PENDING"
     },
 
     /* ===== RESIDENTIAL ===== */
@@ -370,6 +370,7 @@ const propertySchema = new mongoose.Schema(
 
     /* ===== CONTACT ===== */
     contact: {
+      name: String,
       phone: String,
       email: String,
       phonePrivate: Boolean,

@@ -27,8 +27,8 @@ router.get("/:id", filterController.getPropertyById);
 // Get my properties
 router.get("/user/my", auth, filterController.getMyProperties);
 
-// Create draft
-router.post("/", auth, controller.createDraft);
+// Create property (PENDING status)
+router.post("/", auth, controller.createProperty);
 
 // Update any step
 router.put("/:id", auth, controller.updateProperty);

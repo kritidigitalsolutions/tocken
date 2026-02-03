@@ -2,8 +2,8 @@ const Property = require("../models/property.model");
 const { calculateListingScore, getListingGrade } = require("../utils/listingScore");
 const { uploadToFirebase, uploadMultipleToFirebase, deleteFromFirebase } = require("../utils/firebaseUpload");
 
-// 1️⃣ Create property with full details (as DRAFT)
-exports.createDraft = async (req, res) => {
+// 1️⃣ Create property with full details (as PENDING)
+exports.createProperty = async (req, res) => {
   try {
     // Prepare property data from request
     const propertyData = {
@@ -11,7 +11,7 @@ exports.createDraft = async (req, res) => {
       listingType: req.body.listingType,
       propertyType: req.body.propertyType,
       propertyCategory: req.body.propertyCategory,
-      status: "DRAFT", // Always create as DRAFT
+      status: "PENDING", // Always create as PENDING for admin review
 
       // Details based on property type
       ...(req.body.residentialDetails && { residentialDetails: req.body.residentialDetails }),
@@ -35,7 +35,7 @@ exports.createDraft = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Property created as draft",
+      message: "Property created successfully. Pending admin approval.",
       data: property.id
     });
   } catch (error) {
@@ -48,7 +48,7 @@ exports.createDraft = async (req, res) => {
   }
 };
 
-// 2️⃣ Update property (while in DRAFT status)
+// 2️⃣ Update property (while in PENDING status)
 exports.updateProperty = async (req, res) => {
   try {
     const property = await Property.findById(req.params.id);
@@ -60,11 +60,11 @@ exports.updateProperty = async (req, res) => {
       });
     }
 
-    // Only allow updating DRAFT properties
-    if (property.status !== "DRAFT") {
+    // Only allow updating PENDING properties
+    if (property.status !== "PENDING") {
       return res.status(400).json({
         success: false,
-        message: "Can only edit DRAFT properties. Contact admin to approve changes."
+        message: "Can only edit PENDING properties. Contact admin to approve changes."
       });
     }
 
@@ -97,7 +97,7 @@ exports.updateProperty = async (req, res) => {
 };
 
 
-// 3️⃣ Submit property for admin review (DRAFT → SUBMITTED)
+// 3️⃣ Submit property for admin review (PENDING → SUBMITTED)
 exports.submitProperty = async (req, res) => {
   try {
     const property = await Property.findById(req.params.id);
@@ -109,10 +109,10 @@ exports.submitProperty = async (req, res) => {
       });
     }
 
-    if (property.status !== "DRAFT") {
+    if (property.status !== "PENDING") {
       return res.status(400).json({
         success: false,
-        message: "Only DRAFT properties can be submitted"
+        message: "Only PENDING properties can be submitted"
       });
     }
 

@@ -112,7 +112,7 @@ export default function Login() {
                     ? 'bg-slate-900/50 border-slate-600 text-white placeholder-slate-400' 
                     : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
                 }`}
-                placeholder="admin123@gmail.com"
+                placeholder="admin@realestate.com"
               />
             </div>
           </div>

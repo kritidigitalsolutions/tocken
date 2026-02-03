@@ -364,7 +364,7 @@ const Properties = () => {
                             <span className={`text-xs px-2 py-0.5 rounded-full ${
                               property.status === "ACTIVE" 
                                 ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
-                                : property.status === "DRAFT"
+                                : property.status === "PENDING"
                                 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400'
                                 : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400'
                             }`}>
@@ -474,7 +474,7 @@ const Properties = () => {
                   <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>Current Status</p>
                   <p className={`text-lg font-semibold ${
                     propertyDetails.status === "ACTIVE" ? 'text-green-500' :
-                    propertyDetails.status === "DRAFT" ? 'text-yellow-500' :
+                    propertyDetails.status === "PENDING" ? 'text-yellow-500' :
                     propertyDetails.status === "REJECTED" ? 'text-red-500' : 'text-gray-500'
                   }`}>
                     {propertyDetails.status}
@@ -556,6 +556,546 @@ const Properties = () => {
                   <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
                     {propertyDetails.description}
                   </p>
+                </div>
+              )}
+
+              {/* ===== DYNAMIC PROPERTY TYPE DETAILS ===== */}
+              
+              {/* RESIDENTIAL Details */}
+              {propertyDetails.residentialDetails && (propertyDetails.listingType === "RENT" || propertyDetails.listingType === "SELL") && propertyDetails.propertyType === "RESIDENTIAL" && (
+                <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
+                  <h4 className={`text-sm font-semibold mb-4 flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                    <Home className="w-4 h-4" /> Residential Details
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {propertyDetails.residentialDetails.bhkType && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>BHK Type</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.residentialDetails.bhkType}</p>
+                      </div>
+                    )}
+                    {propertyDetails.residentialDetails.bathrooms && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Bathrooms</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.residentialDetails.bathrooms}</p>
+                      </div>
+                    )}
+                    {propertyDetails.residentialDetails.balconies && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Balconies</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.residentialDetails.balconies}</p>
+                      </div>
+                    )}
+                    {propertyDetails.residentialDetails.facing && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Facing</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.residentialDetails.facing}</p>
+                      </div>
+                    )}
+                    {propertyDetails.residentialDetails.flooring && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Flooring</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.residentialDetails.flooring}</p>
+                      </div>
+                    )}
+                    {propertyDetails.residentialDetails.ownership && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Ownership</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.residentialDetails.ownership}</p>
+                      </div>
+                    )}
+                    {propertyDetails.residentialDetails.totalFloors && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Total Floors</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.residentialDetails.totalFloors}</p>
+                      </div>
+                    )}
+                    {propertyDetails.residentialDetails.yourFloor && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Your Floor</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.residentialDetails.yourFloor}</p>
+                      </div>
+                    )}
+                    {propertyDetails.residentialDetails.constructionStatus && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Construction Status</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.residentialDetails.constructionStatus}</p>
+                      </div>
+                    )}
+                    {propertyDetails.residentialDetails.ageOfProperty && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Age of Property</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.residentialDetails.ageOfProperty}</p>
+                      </div>
+                    )}
+                    {propertyDetails.residentialDetails.availableFrom && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Available From</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.residentialDetails.availableFrom}</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Furnishing */}
+                  {propertyDetails.residentialDetails.furnishing?.type && (
+                    <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                      <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Furnishing</p>
+                      <span className={`px-2 py-1 rounded text-sm ${isDark ? 'bg-indigo-900/50 text-indigo-400' : 'bg-indigo-100 text-indigo-700'}`}>
+                        {propertyDetails.residentialDetails.furnishing.type}
+                      </span>
+                      {propertyDetails.residentialDetails.furnishing.amenities?.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {propertyDetails.residentialDetails.furnishing.amenities.map((a, i) => (
+                            <span key={i} className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-slate-600 text-slate-300' : 'bg-gray-200 text-gray-700'}`}>
+                              {a.name} {a.quantity && `(${a.quantity})`}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Area Details */}
+                  {propertyDetails.residentialDetails.area && (
+                    <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                      <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Area</p>
+                      <div className="flex gap-4">
+                        {propertyDetails.residentialDetails.area.builtUp?.value && (
+                          <div>
+                            <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                              Built-up: {propertyDetails.residentialDetails.area.builtUp.value} {propertyDetails.residentialDetails.area.builtUp.unit}
+                            </span>
+                          </div>
+                        )}
+                        {propertyDetails.residentialDetails.area.carpet?.value && (
+                          <div>
+                            <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                              Carpet: {propertyDetails.residentialDetails.area.carpet.value} {propertyDetails.residentialDetails.area.carpet.unit}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Preferred Tenants */}
+                  {propertyDetails.residentialDetails.preferredTenants?.length > 0 && (
+                    <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                      <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Preferred Tenants</p>
+                      <div className="flex flex-wrap gap-2">
+                        {propertyDetails.residentialDetails.preferredTenants.map((t, i) => (
+                          <span key={i} className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-green-900/50 text-green-400' : 'bg-green-100 text-green-700'}`}>
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* COMMERCIAL Details */}
+              {propertyDetails.commercialDetails && propertyDetails.propertyType === "COMMERCIAL" && (
+                <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
+                  <h4 className={`text-sm font-semibold mb-4 flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                    <Building2 className="w-4 h-4" /> Commercial Details
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {propertyDetails.commercialDetails.propertyType && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Property Type</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.commercialDetails.propertyType}</p>
+                      </div>
+                    )}
+                    {propertyDetails.commercialDetails.constructionStatus && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Construction Status</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.commercialDetails.constructionStatus}</p>
+                      </div>
+                    )}
+                    {propertyDetails.commercialDetails.washrooms && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Washrooms</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.commercialDetails.washrooms}</p>
+                      </div>
+                    )}
+                    {propertyDetails.commercialDetails.locationHub && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Location Hub</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.commercialDetails.locationHub}</p>
+                      </div>
+                    )}
+                    {propertyDetails.commercialDetails.zoneType && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Zone Type</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.commercialDetails.zoneType}</p>
+                      </div>
+                    )}
+                    {propertyDetails.commercialDetails.propertyCondition && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Condition</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.commercialDetails.propertyCondition}</p>
+                      </div>
+                    )}
+                    {propertyDetails.commercialDetails.totalFloors && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Total Floors</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.commercialDetails.totalFloors}</p>
+                      </div>
+                    )}
+                    {propertyDetails.commercialDetails.yourFloor && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Your Floor</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.commercialDetails.yourFloor}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Office Setup */}
+                  {propertyDetails.commercialDetails.officeSetup && (
+                    <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                      <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Office Setup</p>
+                      <div className="flex gap-4">
+                        {propertyDetails.commercialDetails.officeSetup.cabins && (
+                          <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            Cabins: {propertyDetails.commercialDetails.officeSetup.cabins}
+                          </span>
+                        )}
+                        {propertyDetails.commercialDetails.officeSetup.meetingRooms && (
+                          <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            Meeting Rooms: {propertyDetails.commercialDetails.officeSetup.meetingRooms}
+                          </span>
+                        )}
+                        {propertyDetails.commercialDetails.officeSetup.seats && (
+                          <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            Seats: {propertyDetails.commercialDetails.officeSetup.seats}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Suitable For */}
+                  {propertyDetails.commercialDetails.suitableFor?.length > 0 && (
+                    <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                      <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Suitable For</p>
+                      <div className="flex flex-wrap gap-2">
+                        {propertyDetails.commercialDetails.suitableFor.map((s, i) => (
+                          <span key={i} className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-purple-900/50 text-purple-400' : 'bg-purple-100 text-purple-700'}`}>
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fire Safety */}
+                  {propertyDetails.commercialDetails.fireSafety?.length > 0 && (
+                    <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                      <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Fire Safety</p>
+                      <div className="flex flex-wrap gap-2">
+                        {propertyDetails.commercialDetails.fireSafety.map((f, i) => (
+                          <span key={i} className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-red-900/50 text-red-400' : 'bg-red-100 text-red-700'}`}>
+                            {f}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* PG Details */}
+              {propertyDetails.pgDetails && propertyDetails.listingType === "PG" && (
+                <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
+                  <h4 className={`text-sm font-semibold mb-4 flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                    <Building2 className="w-4 h-4" /> PG Details
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {propertyDetails.pgDetails.pgName && (
+                      <div className={`p-3 rounded-lg col-span-2 ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>PG Name</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.pgDetails.pgName}</p>
+                      </div>
+                    )}
+                    {propertyDetails.pgDetails.pgFor && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>PG For</p>
+                        <p className={`font-medium capitalize ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.pgDetails.pgFor}</p>
+                      </div>
+                    )}
+                    {propertyDetails.pgDetails.managedBy && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Managed By</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.pgDetails.managedBy}</p>
+                      </div>
+                    )}
+                    {propertyDetails.pgDetails.totalFloors && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Total Floors</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.pgDetails.totalFloors}</p>
+                      </div>
+                    )}
+                    {propertyDetails.pgDetails.noticePeriod && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Notice Period</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.pgDetails.noticePeriod} days</p>
+                      </div>
+                    )}
+                    {propertyDetails.pgDetails.availableFrom && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Available From</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.pgDetails.availableFrom}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Room Types */}
+                  {propertyDetails.pgDetails.roomTypes?.length > 0 && (
+                    <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                      <p className={`text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Room Types</p>
+                      <div className="space-y-2">
+                        {propertyDetails.pgDetails.roomTypes.map((room, i) => (
+                          <div key={i} className={`flex justify-between items-center p-2 rounded ${isDark ? 'bg-slate-600/50' : 'bg-gray-50'}`}>
+                            <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{room.sharingType}</span>
+                            <span className={`text-sm font-bold ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>₹{room.rentAmount?.toLocaleString()}/month</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Food */}
+                  {propertyDetails.pgDetails.food?.included && (
+                    <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                      <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Food Included</p>
+                      <div className="flex flex-wrap gap-2">
+                        {propertyDetails.pgDetails.food.meals?.map((meal, i) => (
+                          <span key={i} className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-orange-900/50 text-orange-400' : 'bg-orange-100 text-orange-700'}`}>
+                            {meal}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Best Suited For */}
+                  {propertyDetails.pgDetails.bestSuitedFor?.length > 0 && (
+                    <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                      <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Best Suited For</p>
+                      <div className="flex flex-wrap gap-2">
+                        {propertyDetails.pgDetails.bestSuitedFor.map((s, i) => (
+                          <span key={i} className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-blue-900/50 text-blue-400' : 'bg-blue-100 text-blue-700'}`}>
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Included Services */}
+                  {propertyDetails.pgDetails.includedServices?.length > 0 && (
+                    <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                      <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Included Services</p>
+                      <div className="flex flex-wrap gap-2">
+                        {propertyDetails.pgDetails.includedServices.map((s, i) => (
+                          <span key={i} className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-green-900/50 text-green-400' : 'bg-green-100 text-green-700'}`}>
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* CO-LIVING Details */}
+              {propertyDetails.coLivingDetails && propertyDetails.listingType === "CO_LIVING" && (
+                <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
+                  <h4 className={`text-sm font-semibold mb-4 flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                    <Users className="w-4 h-4" /> Co-Living Details
+                  </h4>
+                  
+                  {/* Profile Section */}
+                  <div className="flex items-center gap-4 mb-4">
+                    {propertyDetails.coLivingDetails.profileImage && (
+                      <img 
+                        src={propertyDetails.coLivingDetails.profileImage} 
+                        alt="Profile"
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                    )}
+                    <div>
+                      {propertyDetails.coLivingDetails.name && (
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.coLivingDetails.name}</p>
+                      )}
+                      {propertyDetails.coLivingDetails.gender && (
+                        <p className={`text-sm capitalize ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{propertyDetails.coLivingDetails.gender}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {propertyDetails.coLivingDetails.occupation && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Occupation</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.coLivingDetails.occupation}</p>
+                      </div>
+                    )}
+                    {propertyDetails.coLivingDetails.bhk && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>BHK</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.coLivingDetails.bhk}</p>
+                      </div>
+                    )}
+                    {propertyDetails.coLivingDetails.lookingToShiftBy && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Looking to Shift By</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.coLivingDetails.lookingToShiftBy}</p>
+                      </div>
+                    )}
+                    {propertyDetails.coLivingDetails.partnerGender && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Partner Gender</p>
+                        <p className={`font-medium capitalize ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.coLivingDetails.partnerGender}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Budget Range */}
+                  {propertyDetails.coLivingDetails.budgetRange && (
+                    <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                      <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Budget Range</p>
+                      <p className={`font-medium ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                        ₹{propertyDetails.coLivingDetails.budgetRange.min?.toLocaleString()} - ₹{propertyDetails.coLivingDetails.budgetRange.max?.toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Languages & Hobbies */}
+                  {propertyDetails.coLivingDetails.languages && (
+                    <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                      <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Languages</p>
+                      <p className={`text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.coLivingDetails.languages}</p>
+                    </div>
+                  )}
+
+                  {/* Preferences */}
+                  {propertyDetails.coLivingDetails.preferences?.length > 0 && (
+                    <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                      <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Preferences</p>
+                      <div className="flex flex-wrap gap-2">
+                        {propertyDetails.coLivingDetails.preferences.map((p, i) => (
+                          <span key={i} className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-purple-900/50 text-purple-400' : 'bg-purple-100 text-purple-700'}`}>
+                            {p}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Social Links */}
+                  {(propertyDetails.coLivingDetails.instagramLink || propertyDetails.coLivingDetails.FacebookLink || propertyDetails.coLivingDetails.LinkedInLink) && (
+                    <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                      <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Social Links</p>
+                      <div className="flex gap-2">
+                        {propertyDetails.coLivingDetails.instagramLink && (
+                          <a href={propertyDetails.coLivingDetails.instagramLink} target="_blank" rel="noopener noreferrer" className="text-pink-500 text-sm hover:underline">Instagram</a>
+                        )}
+                        {propertyDetails.coLivingDetails.FacebookLink && (
+                          <a href={propertyDetails.coLivingDetails.FacebookLink} target="_blank" rel="noopener noreferrer" className="text-blue-500 text-sm hover:underline">Facebook</a>
+                        )}
+                        {propertyDetails.coLivingDetails.LinkedInLink && (
+                          <a href={propertyDetails.coLivingDetails.LinkedInLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm hover:underline">LinkedIn</a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* PRICING Details */}
+              {propertyDetails.pricing && (
+                <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
+                  <h4 className={`text-sm font-semibold mb-4 flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                    <Tag className="w-4 h-4" /> Pricing Details
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {propertyDetails.pricing.rent?.rentAmount && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Rent Amount</p>
+                        <p className={`font-medium ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>₹{propertyDetails.pricing.rent.rentAmount.toLocaleString()}/month</p>
+                      </div>
+                    )}
+                    {propertyDetails.pricing.sell?.expectedPrice && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Expected Price</p>
+                        <p className={`font-medium ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>₹{propertyDetails.pricing.sell.expectedPrice.toLocaleString()}</p>
+                      </div>
+                    )}
+                    {propertyDetails.pricing.sell?.pricePerSqrFt && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Price/Sq.Ft</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>₹{propertyDetails.pricing.sell.pricePerSqrFt.toLocaleString()}</p>
+                      </div>
+                    )}
+                    {propertyDetails.pricing.securityDeposit?.amount && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Security Deposit</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>₹{propertyDetails.pricing.securityDeposit.amount.toLocaleString()}</p>
+                      </div>
+                    )}
+                    {propertyDetails.pricing.lockInPeriod?.month && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Lock-in Period</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.pricing.lockInPeriod.month} months</p>
+                      </div>
+                    )}
+                    {propertyDetails.pricing.noticePeriod && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Notice Period</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.pricing.noticePeriod} days</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Additional Charges */}
+                  {propertyDetails.pricing.addMore && (
+                    <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                      <p className={`text-xs mb-2 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Additional Charges</p>
+                      <div className="flex flex-wrap gap-3">
+                        {propertyDetails.pricing.addMore.maintenanceCharge && (
+                          <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            Maintenance: ₹{propertyDetails.pricing.addMore.maintenanceCharge.toLocaleString()}
+                          </span>
+                        )}
+                        {propertyDetails.pricing.addMore.bookingAmount && (
+                          <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            Booking: ₹{propertyDetails.pricing.addMore.bookingAmount.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Negotiable & Other Flags */}
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {propertyDetails.pricing.rent?.isNegotiable && (
+                      <span className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-green-900/50 text-green-400' : 'bg-green-100 text-green-700'}`}>
+                        Negotiable
+                      </span>
+                    )}
+                    {propertyDetails.pricing.sell?.isNegotiable && (
+                      <span className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-green-900/50 text-green-400' : 'bg-green-100 text-green-700'}`}>
+                        Negotiable
+                      </span>
+                    )}
+                    {propertyDetails.pricing.rent?.isElectricity && (
+                      <span className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-yellow-900/50 text-yellow-400' : 'bg-yellow-100 text-yellow-700'}`}>
+                        Electricity Included
+                      </span>
+                    )}
+                  </div>
                 </div>
               )}
 
