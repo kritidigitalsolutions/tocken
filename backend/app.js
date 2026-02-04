@@ -6,6 +6,7 @@ const adminBannerRoutes = require("./routes/admin/banner.route");
 const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes.js");
 const legalRoutes = require("./routes/legal.routes");
+const legalRoutesAdmin = require("./routes/admin/legal.routes.js");
 const faqRoutes = require("./routes/faq.routes");
 const faqAdminRoutes = require("./routes/admin/faq.routes");
 
@@ -122,8 +123,12 @@ app.use("/api/admin/banners", isAuth, isAdmin, adminBannerRoutes);
 app.use("/api/auth", authRoutes);
 // User routes
 app.use("/api/user", userRoutes);
-// Legal routes (public)
+
+// Legal routes (public) for get data only
 app.use("/api/legal", legalRoutes);
+
+// Legal routes (Admin) for upadate data
+app.use("/api/admin/legal", isAuth, isAdmin, legalRoutesAdmin);
 
 // PUBLIC FAQs
 app.use("/api/faqs", faqRoutes);

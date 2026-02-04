@@ -1,4 +1,5 @@
-const Property = require("../models/property.model");
+const FilterProperty = require("../models/filterProperty.model");
+const Property = require("../models/property.model"); // For getMyProperties (user's own properties)
 const axios = require("axios");
 
 /**
@@ -83,13 +84,36 @@ exports.searchLocationsForFilter = async (req, res) => {
 };
 
 /**
+ * Helper function to check if a value is empty
+ * Returns true if value is: null, undefined, "", [], {}
+ */
+const isEmptyValue = (value) => {
+    if (value === null || value === undefined) return true;
+    if (typeof value === "string" && value.trim() === "") return true;
+    if (Array.isArray(value) && value.length === 0) return true;
+    if (Array.isArray(value) && value.every(v => v === "" || v === null || v === undefined)) return true;
+    if (typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0) return true;
+    return false;
+};
+
+/**
+ * Helper function to filter out empty values from array
+ */
+const filterEmptyFromArray = (arr) => {
+    if (!Array.isArray(arr)) return arr;
+    return arr.filter(v => v !== null && v !== undefined && v !== "");
+};
+
+/**
  * FILTER PROPERTIES API
- * GET /api/properties/filter
+ * POST /api/properties/filter
  * 
  * This API supports all filter options from Flutter app:
  * - Rent/Lease, Co-living, PG, Buy, Plot/Land tabs
  * - Property Type, BHK, Budget, Area, Furnish, etc.
  * - OpenStreetMap location search with lat/lng support
+ * 
+ * Send filter data in request body (JSON)
  */
 exports.filterProperties = async (req, res) => {
     try {
@@ -142,6 +166,14 @@ exports.filterProperties = async (req, res) => {
             withImages,         // true = only with images
             forLease,           // true = for lease properties
 
+            // Plot/Land specific
+            facing,             // North, South, East, West
+            cornerPlot,         // true/false
+            boundaryWall,       // true/false
+
+            // Premium filter
+            hotDeals,           // true = only premium properties
+
             // Sorting
             sortBy,             // price_low, price_high, newest, oldest, score
 
@@ -151,51 +183,65 @@ exports.filterProperties = async (req, res) => {
             // Pagination
             page = 1,
             limit = 20
-        } = req.query;
+        } = req.body;
 
-        // Build query
-        const query = {
-            isDeleted: false
-        };
-
-        // Status filter - default to ACTIVE for public, but allow override
-        if (status) {
-            // Allow multiple statuses: status=ACTIVE,PENDING
-            const statuses = Array.isArray(status) ? status : status.split(",");
-            query.status = { $in: statuses };
-        } else {
-            // Default: show only ACTIVE properties for public users
-            query.status = "ACTIVE";
-        }
+        // Build query - FilterProperty collection only has ACTIVE properties
+        // No need for status filter as all properties here are already approved
+        const query = {};
 
         // ===== TAB FILTER =====
         if (listingType) {
             query.listingType = listingType;
         }
 
-        // ===== LOCATION FILTER (OpenStreetMap Integrated) =====
+        // ===== LOCATION FILTER (Text-based + OpenStreetMap) =====
         let locationData = null;
 
-        // If lat/lng provided directly, use coordinate-based search
+        // If lat/lng provided directly, use coordinate-based search WITH text fallback
         if (lat && lng) {
             const radiusKm = parseFloat(radius) || 10; // Default 10km radius
             const radiusInDegrees = radiusKm / 111; // ~111km per degree
 
-            query["location.coordinates.lat"] = {
-                $gte: parseFloat(lat) - radiusInDegrees,
-                $lte: parseFloat(lat) + radiusInDegrees
+            // Use $or to match either coordinates OR city name (for properties without coordinates)
+            const coordinateQuery = {
+                $and: [
+                    { "location.coordinates.lat": { $gte: parseFloat(lat) - radiusInDegrees, $lte: parseFloat(lat) + radiusInDegrees } },
+                    { "location.coordinates.lng": { $gte: parseFloat(lng) - radiusInDegrees, $lte: parseFloat(lng) + radiusInDegrees } }
+                ]
             };
-            query["location.coordinates.lng"] = {
-                $gte: parseFloat(lng) - radiusInDegrees,
-                $lte: parseFloat(lng) + radiusInDegrees
-            };
+
+            // If city is also provided, add text fallback
+            if (city) {
+                query.$or = [
+                    coordinateQuery,
+                    { "location.city": { $regex: city, $options: "i" } }
+                ];
+            } else {
+                query["location.coordinates.lat"] = {
+                    $gte: parseFloat(lat) - radiusInDegrees,
+                    $lte: parseFloat(lat) + radiusInDegrees
+                };
+                query["location.coordinates.lng"] = {
+                    $gte: parseFloat(lng) - radiusInDegrees,
+                    $lte: parseFloat(lng) + radiusInDegrees
+                };
+            }
 
             locationData = { lat: parseFloat(lat), lng: parseFloat(lng), source: "direct" };
         }
-        // If city/locality provided, fetch from OpenStreetMap and use coordinates
+        // If city/locality provided - USE TEXT-BASED SEARCH (case insensitive)
         else if (city || locality) {
-            const searchQuery = locality ? `${locality}, ${city || ""}, India` : `${city}, India`;
+            // ALWAYS use text-based search for city/locality (case insensitive)
+            // This is more reliable as many properties don't have coordinates stored
+            if (city) {
+                query["location.city"] = { $regex: city, $options: "i" };
+            }
+            if (locality) {
+                query["location.locality"] = { $regex: locality, $options: "i" };
+            }
 
+            // Still fetch from OpenStreetMap for location info display
+            const searchQuery = locality ? `${locality}, ${city || ""}, India` : `${city}, India`;
             try {
                 const osmResponse = await axios.get(
                     "https://nominatim.openstreetmap.org/search",
@@ -215,232 +261,245 @@ exports.filterProperties = async (req, res) => {
 
                 if (osmResponse.data && osmResponse.data.length > 0) {
                     const location = osmResponse.data[0];
-                    const osmLat = parseFloat(location.lat);
-                    const osmLng = parseFloat(location.lon);
-                    const radiusKm = parseFloat(radius) || 15; // Default 15km for city search
-                    const radiusInDegrees = radiusKm / 111;
-
-                    // Use coordinates for precise location matching
-                    query["location.coordinates.lat"] = {
-                        $gte: osmLat - radiusInDegrees,
-                        $lte: osmLat + radiusInDegrees
-                    };
-                    query["location.coordinates.lng"] = {
-                        $gte: osmLng - radiusInDegrees,
-                        $lte: osmLng + radiusInDegrees
-                    };
-
                     locationData = {
                         searchQuery,
                         displayName: location.display_name,
                         city: location.address?.city || location.address?.town || location.address?.state_district || city,
                         locality: location.address?.suburb || location.address?.neighbourhood || locality || "",
                         state: location.address?.state || "",
-                        lat: osmLat,
-                        lng: osmLng,
-                        radius: radiusKm,
-                        source: "openstreetmap"
+                        lat: parseFloat(location.lat),
+                        lng: parseFloat(location.lon),
+                        source: "openstreetmap_text_search"
                     };
                 } else {
-                    // Fallback to text-based search if OpenStreetMap returns no results
-                    if (city) {
-                        query["location.city"] = { $regex: city, $options: "i" };
-                    }
-                    if (locality) {
-                        query["location.locality"] = { $regex: locality, $options: "i" };
-                    }
-                    locationData = { city, locality, source: "text_fallback" };
+                    locationData = { city, locality, source: "text_search" };
                 }
             } catch (osmError) {
                 console.error("OpenStreetMap API error:", osmError.message);
-                // Fallback to text-based search on API error
-                if (city) {
-                    query["location.city"] = { $regex: city, $options: "i" };
-                }
-                if (locality) {
-                    query["location.locality"] = { $regex: locality, $options: "i" };
-                }
-                locationData = { city, locality, source: "text_fallback", error: osmError.message };
+                locationData = { city, locality, source: "text_search", error: osmError.message };
             }
         }
 
-        // State filter (additional)
-        if (state) {
+        // State filter (additional) - case insensitive
+        if (!isEmptyValue(state)) {
             query["location.state"] = { $regex: state, $options: "i" };
         }
 
         // ===== PROPERTY TYPE FILTER =====
-        if (propertyType) {
-            query.propertyType = propertyType;
+        if (!isEmptyValue(propertyType)) {
+            query.propertyType = { $regex: `^${propertyType}$`, $options: "i" };
         }
-        if (propertyCategory) {
-            // Support multiple categories
-            const categories = Array.isArray(propertyCategory)
-                ? propertyCategory
-                : propertyCategory.split(",");
-            query.propertyCategory = { $in: categories };
+        if (!isEmptyValue(propertyCategory)) {
+            // Support multiple categories - case insensitive using regex
+            const categories = filterEmptyFromArray(
+                Array.isArray(propertyCategory) ? propertyCategory : propertyCategory.split(",")
+            );
+            if (categories.length > 0) {
+                // Create case-insensitive regex for each category
+                const categoryRegexes = categories.map(cat => new RegExp(`^${cat.trim()}$`, "i"));
+                query.propertyCategory = { $in: categoryRegexes };
+            }
         }
 
         // ===== RESIDENTIAL FILTERS =====
         if (listingType === "RENT" || listingType === "SELL") {
 
-            // BHK Type
-            if (bhkType) {
-                const bhkArray = Array.isArray(bhkType) ? bhkType : bhkType.split(",");
-                query["residentialDetails.bhkType"] = { $in: bhkArray };
+            // BHK Type - case insensitive (ignore if empty)
+            if (!isEmptyValue(bhkType)) {
+                const bhkArray = filterEmptyFromArray(
+                    Array.isArray(bhkType) ? bhkType : bhkType.split(",")
+                );
+                if (bhkArray.length > 0) {
+                    const bhkRegexes = bhkArray.map(bhk => new RegExp(`^${bhk.trim()}$`, "i"));
+                    query["residentialDetails.bhkType"] = { $in: bhkRegexes };
+                }
             }
 
-            // Preferred Tenant (database field: preferredTenants - array)
-            if (preferredTenant) {
-                const tenants = Array.isArray(preferredTenant)
-                    ? preferredTenant
-                    : preferredTenant.split(",");
-                query["residentialDetails.preferredTenants"] = { $in: tenants };
+            // Preferred Tenant (database field: preferredTenants - array) - case insensitive (ignore if empty)
+            if (!isEmptyValue(preferredTenant)) {
+                const tenants = filterEmptyFromArray(
+                    Array.isArray(preferredTenant) ? preferredTenant : preferredTenant.split(",")
+                );
+                if (tenants.length > 0) {
+                    const tenantRegexes = tenants.map(t => new RegExp(`^${t.trim()}$`, "i"));
+                    query["residentialDetails.preferredTenants"] = { $in: tenantRegexes };
+                }
             }
 
-            // Furnish Type (database field: furnishing.type)
-            if (furnishType) {
-                const furnishTypes = Array.isArray(furnishType)
-                    ? furnishType
-                    : furnishType.split(",");
-                query["residentialDetails.furnishing.type"] = { $in: furnishTypes };
+            // Furnish Type (database field: furnishing.type) - case insensitive (ignore if empty)
+            if (!isEmptyValue(furnishType)) {
+                const furnishTypes = filterEmptyFromArray(
+                    Array.isArray(furnishType) ? furnishType : furnishType.split(",")
+                );
+                if (furnishTypes.length > 0) {
+                    const furnishRegexes = furnishTypes.map(f => new RegExp(`^${f.trim()}$`, "i"));
+                    query["residentialDetails.furnishing.type"] = { $in: furnishRegexes };
+                }
             }
 
-            // Property Condition (for Buy - residential)
-            if (propertyCondition) {
-                query["residentialDetails.constructionStatus"] = propertyCondition;
+            // Property Condition (for Buy - residential) - case insensitive (ignore if empty)
+            if (!isEmptyValue(propertyCondition)) {
+                query["residentialDetails.constructionStatus"] = { $regex: `^${propertyCondition}$`, $options: "i" };
             }
 
             // Budget filter - FIXED: Use correct field paths from model
             // RENT = pricing.rent.rentAmount, SELL = pricing.sell.expectedPrice
-            if (minBudget || maxBudget) {
+            // Only apply if minBudget or maxBudget is greater than 0
+            if ((minBudget && parseInt(minBudget) > 0) || (maxBudget && parseInt(maxBudget) > 0)) {
                 const priceField = listingType === "RENT"
                     ? "pricing.rent.rentAmount"
                     : "pricing.sell.expectedPrice";
 
-                if (minBudget && maxBudget) {
-                    query[priceField] = {
-                        $gte: parseInt(minBudget),
-                        $lte: parseInt(maxBudget)
-                    };
-                } else if (minBudget) {
-                    query[priceField] = { $gte: parseInt(minBudget) };
-                } else if (maxBudget) {
-                    query[priceField] = { $lte: parseInt(maxBudget) };
+                const priceQuery = {};
+                if (minBudget && parseInt(minBudget) > 0) priceQuery.$gte = parseInt(minBudget);
+                if (maxBudget && parseInt(maxBudget) > 0) priceQuery.$lte = parseInt(maxBudget);
+                
+                if (Object.keys(priceQuery).length > 0) {
+                    query[priceField] = priceQuery;
                 }
             }
 
             // Area filter (database field: residentialDetails.area.builtUp.value)
-            if (minArea || maxArea) {
+            if ((minArea && parseInt(minArea) > 0) || (maxArea && parseInt(maxArea) > 0)) {
                 const areaQuery = {};
-                if (minArea) areaQuery.$gte = parseInt(minArea);
-                if (maxArea) areaQuery.$lte = parseInt(maxArea);
-                query["residentialDetails.area.builtUp.value"] = areaQuery;
+                if (minArea && parseInt(minArea) > 0) areaQuery.$gte = parseInt(minArea);
+                if (maxArea && parseInt(maxArea) > 0) areaQuery.$lte = parseInt(maxArea);
+                if (Object.keys(areaQuery).length > 0) {
+                    query["residentialDetails.area.builtUp.value"] = areaQuery;
+                }
             }
         }
 
         // ===== PG FILTERS =====
         if (listingType === "PG") {
-            if (pgFor) {
-                query["pgDetails.pgFor"] = pgFor;
+            if (!isEmptyValue(pgFor)) {
+                query["pgDetails.pgFor"] = { $regex: `^${pgFor}$`, $options: "i" };
             }
-            if (roomSharingType) {
-                const sharingTypes = Array.isArray(roomSharingType)
-                    ? roomSharingType
-                    : roomSharingType.split(",");
-                // FIXED: Model has roomTypes array with sharingType field
-                query["pgDetails.roomTypes.sharingType"] = { $in: sharingTypes };
+            if (!isEmptyValue(roomSharingType)) {
+                const sharingTypes = filterEmptyFromArray(
+                    Array.isArray(roomSharingType) ? roomSharingType : roomSharingType.split(",")
+                );
+                if (sharingTypes.length > 0) {
+                    const sharingRegexes = sharingTypes.map(s => new RegExp(`^${s.trim()}$`, "i"));
+                    // FIXED: Model has roomTypes array with sharingType field
+                    query["pgDetails.roomTypes.sharingType"] = { $in: sharingRegexes };
+                }
             }
-            if (withMeals === "true") {
+            if (withMeals === "true" || withMeals === true) {
                 // FIXED: Model has food.included (not foodIncluded)
                 query["pgDetails.food.included"] = true;
             }
-            if (preferringFor) {
-                const suitedFor = Array.isArray(preferringFor)
-                    ? preferringFor
-                    : preferringFor.split(",");
-                query["pgDetails.bestSuitedFor"] = { $in: suitedFor };
+            if (!isEmptyValue(attachedBathroom) && (attachedBathroom === "true" || attachedBathroom === true)) {
+                query["pgDetails.roomTypes.attachedBathroom"] = true;
+            }
+            if (!isEmptyValue(attachedBalcony) && (attachedBalcony === "true" || attachedBalcony === true)) {
+                query["pgDetails.roomTypes.attachedBalcony"] = true;
+            }
+            if (!isEmptyValue(availabilityDate)) {
+                // Map availability to actual date comparison or text match
+                query["pgDetails.availableFrom"] = { $regex: availabilityDate, $options: "i" };
+            }
+            if (!isEmptyValue(preferringFor)) {
+                const suitedFor = filterEmptyFromArray(
+                    Array.isArray(preferringFor) ? preferringFor : preferringFor.split(",")
+                );
+                if (suitedFor.length > 0) {
+                    const suitedRegexes = suitedFor.map(s => new RegExp(`^${s.trim()}$`, "i"));
+                    query["pgDetails.bestSuitedFor"] = { $in: suitedRegexes };
+                }
             }
 
-            // Budget for PG - FIXED: pricing.rent.rentAmount (not pricing.rent.amount)
-            if (minBudget || maxBudget) {
+            // Budget for PG - only if > 0
+            if ((minBudget && parseInt(minBudget) > 0) || (maxBudget && parseInt(maxBudget) > 0)) {
                 const priceQuery = {};
-                if (minBudget) priceQuery.$gte = parseInt(minBudget);
-                if (maxBudget) priceQuery.$lte = parseInt(maxBudget);
-                query["pricing.rent.rentAmount"] = priceQuery;
+                if (minBudget && parseInt(minBudget) > 0) priceQuery.$gte = parseInt(minBudget);
+                if (maxBudget && parseInt(maxBudget) > 0) priceQuery.$lte = parseInt(maxBudget);
+                if (Object.keys(priceQuery).length > 0) {
+                    query["pricing.rent.rentAmount"] = priceQuery;
+                }
             }
         }
 
         // ===== CO-LIVING FILTERS =====
-        if (listingType === "Co-Living") {
-            if (lookingFor) {
-                query["coLivingDetails.lookingFor"] = lookingFor;
+        if (listingType === "CO_LIVING") {
+            if (!isEmptyValue(lookingFor)) {
+                query["coLivingDetails.lookingFor"] = { $regex: `^${lookingFor}$`, $options: "i" };
             }
-            if (preferredGender) {
-                query["coLivingDetails.gender"] = preferredGender;
+            if (!isEmptyValue(preferredGender)) {
+                query["coLivingDetails.gender"] = { $regex: `^${preferredGender}$`, $options: "i" };
             }
-            if (preferringFor) {
-                query["coLivingDetails.occupation"] = { $regex: preferringFor, $options: "i" };
+            if (!isEmptyValue(preferringFor)) {
+                const occupations = filterEmptyFromArray(
+                    Array.isArray(preferringFor) ? preferringFor : preferringFor.split(",")
+                );
+                if (occupations.length > 0) {
+                    const occRegexes = occupations.map(o => new RegExp(o.trim(), "i"));
+                    query["coLivingDetails.occupation"] = { $in: occRegexes };
+                }
             }
 
-            // Budget for Co-living
-            if (minBudget || maxBudget) {
+            // Budget for Co-living - only if > 0
+            if ((minBudget && parseInt(minBudget) > 0) || (maxBudget && parseInt(maxBudget) > 0)) {
                 const budgetQuery = {};
-                if (minBudget) budgetQuery.$gte = parseInt(minBudget);
-                if (maxBudget) budgetQuery.$lte = parseInt(maxBudget);
-                query["coLivingDetails.budgetRange.max"] = budgetQuery;
+                if (minBudget && parseInt(minBudget) > 0) budgetQuery.$gte = parseInt(minBudget);
+                if (maxBudget && parseInt(maxBudget) > 0) budgetQuery.$lte = parseInt(maxBudget);
+                if (Object.keys(budgetQuery).length > 0) {
+                    query["coLivingDetails.budgetRange.max"] = budgetQuery;
+                }
             }
         }
 
         // ===== PLOT/LAND FILTERS =====
         // FIXED: Plot/Land data is stored in commercialDetails (not plotDetails)
-        if (listingType === "PLOT_LAND" || propertyCategory === "Plot/Land") {
-            // Plot Type (Residential/Commercial)
-            if (propertyType) {
-                query.propertyType = propertyType;
-            }
-
-            // Facing - FIXED: commercialDetails.facing
-            if (req.query.facing) {
-                query["commercialDetails.facing"] = req.query.facing;
+        if (listingType === "PLOT_LAND" || (!isEmptyValue(propertyCategory) && (
+            (Array.isArray(propertyCategory) && propertyCategory.some(c => c && /plot|land/i.test(c))) ||
+            (typeof propertyCategory === "string" && /plot|land/i.test(propertyCategory))
+        ))) {
+            // Facing - FIXED: commercialDetails.facing - case insensitive
+            if (!isEmptyValue(facing)) {
+                query["commercialDetails.facing"] = { $regex: `^${facing}$`, $options: "i" };
             }
 
             // Corner Plot - FIXED: commercialDetails.cornerPlot
-            if (req.query.cornerPlot === "true") {
+            if (cornerPlot === true || cornerPlot === "true") {
                 query["commercialDetails.cornerPlot"] = true;
             }
 
             // Boundary Wall - FIXED: commercialDetails.boundaryWall
-            if (req.query.boundaryWall === "true") {
+            if (boundaryWall === true || boundaryWall === "true") {
                 query["commercialDetails.boundaryWall"] = true;
             }
 
-            // Plot Area filter - FIXED: commercialDetails.plot.area
-            if (minArea || maxArea) {
+            // Plot Area filter - FIXED: commercialDetails.plot.area - only if > 0
+            if ((minArea && parseInt(minArea) > 0) || (maxArea && parseInt(maxArea) > 0)) {
                 const areaQuery = {};
-                if (minArea) areaQuery.$gte = parseInt(minArea);
-                if (maxArea) areaQuery.$lte = parseInt(maxArea);
-                query["commercialDetails.plot.area"] = areaQuery;
+                if (minArea && parseInt(minArea) > 0) areaQuery.$gte = parseInt(minArea);
+                if (maxArea && parseInt(maxArea) > 0) areaQuery.$lte = parseInt(maxArea);
+                if (Object.keys(areaQuery).length > 0) {
+                    query["commercialDetails.plot.area"] = areaQuery;
+                }
             }
 
-            // Budget for Plot/Land - FIXED: pricing.sell.expectedPrice
-            if (minBudget || maxBudget) {
+            // Budget for Plot/Land - FIXED: pricing.sell.expectedPrice - only if > 0
+            if ((minBudget && parseInt(minBudget) > 0) || (maxBudget && parseInt(maxBudget) > 0)) {
                 const priceQuery = {};
-                if (minBudget) priceQuery.$gte = parseInt(minBudget);
-                if (maxBudget) priceQuery.$lte = parseInt(maxBudget);
-                query["pricing.sell.expectedPrice"] = priceQuery;
+                if (minBudget && parseInt(minBudget) > 0) priceQuery.$gte = parseInt(minBudget);
+                if (maxBudget && parseInt(maxBudget) > 0) priceQuery.$lte = parseInt(maxBudget);
+                if (Object.keys(priceQuery).length > 0) {
+                    query["pricing.sell.expectedPrice"] = priceQuery;
+                }
             }
         }
 
         // ===== HOT DEALS / PREMIUM FILTER =====
-        if (req.query.hotDeals === "true") {
+        if (hotDeals === true || hotDeals === "true") {
             query.isPremium = true;
         }
 
         // ===== COMMON FILTERS =====
 
         // Only with images - FIXED: Model uses 'images' not 'photos'
-        if (withImages === "true") {
+        if (withImages === true || withImages === "true") {
             query["images.0"] = { $exists: true };
         }
 
@@ -456,10 +515,10 @@ exports.filterProperties = async (req, res) => {
                 sortOption = { "pricing.rent.rentAmount": -1, "pricing.sell.expectedPrice": -1 };
                 break;
             case "newest":
-                sortOption = { createdAt: -1 };
+                sortOption = { originalCreatedAt: -1 };
                 break;
             case "oldest":
-                sortOption = { createdAt: 1 };
+                sortOption = { originalCreatedAt: 1 };
                 break;
             case "score":
                 sortOption = { listingScore: -1 };
@@ -476,19 +535,19 @@ exports.filterProperties = async (req, res) => {
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
         const [properties, totalCount] = await Promise.all([
-            Property.find(query)
+            FilterProperty.find(query)
                 .populate("userId", "name phone profileImage")
                 .sort({ isPremium: -1, "premium.boostRank": -1, ...sortOption })
                 .skip(skip)
                 .limit(parseInt(limit))
                 .lean(),
-            Property.countDocuments(query)
+            FilterProperty.countDocuments(query)
         ]);
 
         // ===== RESPONSE =====
         res.status(200).json({
             success: true,
-            properties,
+            properties: properties,
             pagination: {
                 currentPage: parseInt(page),
                 totalPages: Math.ceil(totalCount / parseInt(limit)),
@@ -496,8 +555,9 @@ exports.filterProperties = async (req, res) => {
                 hasMore: (parseInt(page) * parseInt(limit)) < totalCount
             },
             filters: {
-                applied: Object.keys(query).length - 2, // Exclude status and isDeleted
-                query: req.query
+                applied: Object.keys(query).length,
+                appliedQuery: query,  // Debug: show actual MongoDB query
+                requestBody: req.body
             },
             location: locationData
         });
@@ -517,6 +577,7 @@ exports.filterProperties = async (req, res) => {
  * GET /api/properties/search?q=keyword
  * 
  * Search by city, locality, society, landmark
+ * Fetches from FilterProperty collection (only ACTIVE/approved properties)
  */
 exports.searchProperties = async (req, res) => {
     try {
@@ -531,9 +592,8 @@ exports.searchProperties = async (req, res) => {
 
         const searchRegex = { $regex: q, $options: "i" };
 
+        // FilterProperty collection only has ACTIVE properties
         const query = {
-            status: "ACTIVE",
-            isDeleted: false,
             $or: [
                 { "location.city": searchRegex },
                 { "location.locality": searchRegex },
@@ -551,13 +611,13 @@ exports.searchProperties = async (req, res) => {
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
         const [properties, totalCount] = await Promise.all([
-            Property.find(query)
+            FilterProperty.find(query)
                 .populate("userId", "name phone profileImage")
-                .sort({ isPremium: -1, listingScore: -1, createdAt: -1 })
+                .sort({ isPremium: -1, listingScore: -1, originalCreatedAt: -1 })
                 .skip(skip)
                 .limit(parseInt(limit))
                 .lean(),
-            Property.countDocuments(query)
+            FilterProperty.countDocuments(query)
         ]);
 
         res.status(200).json({
@@ -586,6 +646,7 @@ exports.searchProperties = async (req, res) => {
  * GET /api/properties/nearby?lat=28.5&lng=77.2&radius=5
  * 
  * Get properties within radius (km) using OpenStreetMap coordinates
+ * Fetches from FilterProperty collection (only ACTIVE/approved properties)
  */
 exports.getNearbyProperties = async (req, res) => {
     try {
@@ -601,9 +662,8 @@ exports.getNearbyProperties = async (req, res) => {
         // Convert radius from km to degrees (approximate)
         const radiusInDegrees = parseFloat(radius) / 111;
 
+        // FilterProperty collection only has ACTIVE properties
         const query = {
-            status: "ACTIVE",
-            isDeleted: false,
             "location.coordinates.lat": {
                 $gte: parseFloat(lat) - radiusInDegrees,
                 $lte: parseFloat(lat) + radiusInDegrees
@@ -621,13 +681,13 @@ exports.getNearbyProperties = async (req, res) => {
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
         const [properties, totalCount] = await Promise.all([
-            Property.find(query)
+            FilterProperty.find(query)
                 .populate("userId", "name phone profileImage")
-                .sort({ isPremium: -1, createdAt: -1 })
+                .sort({ isPremium: -1, originalCreatedAt: -1 })
                 .skip(skip)
                 .limit(parseInt(limit))
                 .lean(),
-            Property.countDocuments(query)
+            FilterProperty.countDocuments(query)
         ]);
 
         res.status(200).json({
@@ -656,18 +716,25 @@ exports.getNearbyProperties = async (req, res) => {
 };
 
 /**
- * GET PROPERTY DETAILS
+ * GET PROPERTY DETAILS (from FilterProperty for public)
  * GET /api/properties/:id
  */
 exports.getPropertyById = async (req, res) => {
     try {
-        const property = await Property.findById(req.params.id)
+        // Try to find in FilterProperty first (for ACTIVE properties)
+        let property = await FilterProperty.findOne({ originalPropertyId: req.params.id })
             .populate("userId", "name phone profileImage userType");
+
+        // If not found in FilterProperty, it might be accessed directly by ID
+        if (!property) {
+            property = await FilterProperty.findById(req.params.id)
+                .populate("userId", "name phone profileImage userType");
+        }
 
         if (!property) {
             return res.status(404).json({
                 success: false,
-                message: "Property not found"
+                message: "Property not found or not active"
             });
         }
 

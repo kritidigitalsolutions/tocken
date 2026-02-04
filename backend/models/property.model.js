@@ -28,11 +28,11 @@ const parkingSchema = {
 const areaSchema = {
   builtUp: {
     value: Number,
-    unit: String, 
+    unit: String,
   },
   carpet: {
     value: Number,
-    unit: String, 
+    unit: String,
   },
   plot: {
     value: Number,
@@ -130,7 +130,7 @@ const propertySchema = new mongoose.Schema(
       },
 
       // for Plot/Land
-      plot:{
+      plot: {
         area: Number,
         unit: String
       },
@@ -138,13 +138,13 @@ const propertySchema = new mongoose.Schema(
         length: String,
         width: String,
         widthOfFacingRoad: String
-       },
-       numberOfOpenSide: String,
-       dueConstruction: String,
-       constructionType: String,
-       boundaryWall: Boolean,
-       cornerPlot: Boolean,
-       BrokerReachOut: Boolean,
+      },
+      numberOfOpenSide: String,
+      dueConstruction: String,
+      constructionType: String,
+      boundaryWall: Boolean,
+      cornerPlot: Boolean,
+      BrokerReachOut: Boolean,
       // end Plot/Land model line
       constructionStatusOfWall: String,
 
@@ -175,7 +175,7 @@ const propertySchema = new mongoose.Schema(
         // Pantry
         pantry: {
           isAvailable: Boolean,
-          type: { type: String,},
+          type: { type: String, },
           size: Number, // in sqft
           unit: String
         },
@@ -279,12 +279,12 @@ const propertySchema = new mongoose.Schema(
       totalFloors: Number,
       yourFloor: Number,
       amenities: [String],
-// 
+      // 
       budgetRange: {
         min: Number,
         max: Number
       },
-// 
+      // 
       partnerGender: String,
       ageLimit: {
         min: String,
@@ -300,14 +300,14 @@ const propertySchema = new mongoose.Schema(
     /* ===== PRICING ===== */
     pricing: {
       // for sell residential property
-      sell:{
+      sell: {
         pricePerSqrFt: Number,
         expectedPrice: Number,
         istaxAndGov: Boolean,
         isUpsAndDg: Boolean,
         isNegotiable: Boolean,
         // for plot/Land pricing
-        hotDeal:{
+        hotDeal: {
           isHotDeal: Boolean,
           spacifyDiscount: Number,
           spacialPricingValid: String,
@@ -339,7 +339,7 @@ const propertySchema = new mongoose.Schema(
         depositType: String,
         amount: Number
       },
-      
+
       noticePeriod: Number,
 
       lockInPeriod: {
@@ -353,12 +353,12 @@ const propertySchema = new mongoose.Schema(
       mealsAmount: Number,
       // end  PG Details
 
-      addMore: 
-        {
-          maintenanceCharge: Number,
-          bookingAmount: Number,
-          otherCharge: Number
-        }
+      addMore:
+      {
+        maintenanceCharge: Number,
+        bookingAmount: Number,
+        otherCharge: Number
+      }
     },
 
     /* ===== LOCATION ===== */
@@ -396,7 +396,7 @@ const propertySchema = new mongoose.Schema(
     ],
 
     description: String,
-    
+
 
     /* ===== ADMIN ===== */
     listingScore: { type: Number, default: 0 },

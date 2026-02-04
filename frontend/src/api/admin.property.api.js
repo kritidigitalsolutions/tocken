@@ -6,6 +6,12 @@ export const getProperties = (params) =>
 export const getPropertyDetails = (id) =>
   api.get(`/admin/properties/${id}`);
 
+export const getUserProperties = (userId, params) =>
+  api.get(`/admin/properties/user/${userId}`, { params });
+
+export const updateProperty = (id, data) =>
+  api.put(`/admin/properties/${id}`, data);
+
 export const updatePropertyStatus = (id, status) =>
   api.patch(`/admin/properties/${id}/status`, { status });
 

@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 import { getProperties, getPropertyDetails, updatePropertyStatus, deleteProperty, makePremium, removePremium } from "../../../api/admin.property.api";
 import { useTheme } from "../../../context/ThemeContext";
 import Loader from "../../../components/common/Loader";
-import { 
-  Search, 
-  RefreshCw, 
-  Home, 
-  Key, 
-  Tag, 
-  Users, 
+import {
+  Search,
+  RefreshCw,
+  Home,
+  Key,
+  Tag,
+  Users,
   Building2,
   MapPin,
   Phone,
@@ -16,7 +17,6 @@ import {
   Calendar,
   CheckCircle,
   XCircle,
-  Ban,
   Crown,
   Trash2,
   X,
@@ -28,7 +28,7 @@ import {
 
 const Properties = () => {
   const { isDark } = useTheme();
-  
+
   // States
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -74,16 +74,16 @@ const Properties = () => {
   // Filter properties based on search and listing type
   useEffect(() => {
     let filtered = data;
-    
+
     // Filter by listing type
     if (selectedListingType !== "ALL") {
       filtered = filtered.filter(p => p.listingType === selectedListingType);
     }
-    
+
     // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(p => 
+      filtered = filtered.filter(p =>
         p.location?.city?.toLowerCase().includes(query) ||
         p.location?.locality?.toLowerCase().includes(query) ||
         p.propertyCategory?.toLowerCase().includes(query) ||
@@ -93,7 +93,7 @@ const Properties = () => {
         p.userId?.phone?.includes(query)
       );
     }
-    
+
     setFilteredData(filtered);
   }, [selectedListingType, searchQuery, data]);
 
@@ -129,11 +129,11 @@ const Properties = () => {
       console.log("res.data:", res?.data);
       console.log("res.data.property:", res?.data?.property);
       console.log("res.data.property.images:", res?.data?.property?.images);
-      
+
       const propertyData = res?.data?.property || res?.data;
       console.log("propertyData to set:", propertyData);
       console.log("propertyData.images:", propertyData?.images);
-      
+
       setPropertyDetails(propertyData);
     } catch (err) {
       console.error("ERROR LOADING PROPERTY DETAILS:", err);
@@ -155,10 +155,12 @@ const Properties = () => {
     setActionLoading(true);
     try {
       await updatePropertyStatus(selectedProperty._id, status);
+      toast.success(`Property status changed to ${status}`);
       await loadProperties();
       setPropertyDetails(prev => ({ ...prev, status }));
     } catch (err) {
       console.error("ERROR UPDATING STATUS:", err);
+      toast.error(err?.response?.data?.message || "Failed to update status");
     } finally {
       setActionLoading(false);
     }
@@ -169,10 +171,12 @@ const Properties = () => {
     setActionLoading(true);
     try {
       await makePremium(selectedProperty._id, { planName: "Premium", durationInDays: 30, boostRank: 1 });
+      toast.success("Property marked as Premium");
       await loadProperties();
       setPropertyDetails(prev => ({ ...prev, isPremium: true }));
     } catch (err) {
       console.error("ERROR MAKING PREMIUM:", err);
+      toast.error("Failed to make premium");
     } finally {
       setActionLoading(false);
     }
@@ -183,10 +187,12 @@ const Properties = () => {
     setActionLoading(true);
     try {
       await removePremium(selectedProperty._id);
+      toast.success("Premium removed");
       await loadProperties();
       setPropertyDetails(prev => ({ ...prev, isPremium: false }));
     } catch (err) {
       console.error("ERROR REMOVING PREMIUM:", err);
+      toast.error("Failed to remove premium");
     } finally {
       setActionLoading(false);
     }
@@ -197,10 +203,12 @@ const Properties = () => {
     setActionLoading(true);
     try {
       await deleteProperty(selectedProperty._id);
+      toast.success("Property deleted successfully");
       await loadProperties();
       closeDetailPanel();
     } catch (err) {
       console.error("ERROR DELETING PROPERTY:", err);
+      toast.error("Failed to delete property");
     } finally {
       setActionLoading(false);
     }
@@ -208,9 +216,9 @@ const Properties = () => {
 
   // Format price
   const formatPrice = (property) => {
-    const price = property?.pricing?.rent?.rentAmount || 
-                  property?.pricing?.sell?.expectedPrice || 
-                  property?.pricing?.salePrice;
+    const price = property?.pricing?.rent?.rentAmount ||
+      property?.pricing?.sell?.expectedPrice ||
+      property?.pricing?.salePrice;
     if (!price) return "N/A";
     return `₹${price.toLocaleString()}`;
   };
@@ -232,10 +240,44 @@ const Properties = () => {
 
   return (
     <div className={`h-[calc(100vh-100px)] flex ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
-      
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: isDark ? '#1e293b' : '#ffffff',
+            color: isDark ? '#e2e8f0' : '#1f2937',
+            border: `1px solid ${isDark ? '#475569' : '#e5e7eb'}`,
+            borderRadius: '10px',
+            fontSize: '14px',
+          },
+          success: {
+            style: {
+              background: isDark ? '#064e3b' : '#ecfdf5',
+              color: isDark ? '#86efac' : '#065f46',
+              border: `1px solid ${isDark ? '#047857' : '#6ee7b7'}`,
+            },
+            iconTheme: {
+              primary: isDark ? '#10b981' : '#10b981',
+              secondary: isDark ? '#064e3b' : '#ecfdf5',
+            },
+          },
+          error: {
+            style: {
+              background: isDark ? '#7f1d1d' : '#fef2f2',
+              color: isDark ? '#fca5a5' : '#991b1b',
+              border: `1px solid ${isDark ? '#dc2626' : '#fecaca'}`,
+            },
+            iconTheme: {
+              primary: '#dc2626',
+              secondary: isDark ? '#7f1d1d' : '#fef2f2',
+            },
+          },
+        }}
+      />
+
       {/* LEFT PANEL - Property List */}
       <div className={`w-full ${selectedProperty ? 'lg:w-[400px]' : ''} flex flex-col border-r ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
-        
+
         {/* Search Bar */}
         <div className={`p-4 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
           <div className="relative">
@@ -245,13 +287,12 @@ const Properties = () => {
               placeholder="Search by location, type, category..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-10 pr-10 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-indigo-500 transition ${
-                isDark 
-                  ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400' 
+              className={`w-full pl-10 pr-10 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-indigo-500 transition ${isDark
+                  ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400'
                   : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400'
-              }`}
+                }`}
             />
-            <button 
+            <button
               onClick={loadProperties}
               className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg hover:bg-slate-700/50 transition ${isDark ? 'text-slate-400' : 'text-gray-400'}`}
             >
@@ -267,26 +308,24 @@ const Properties = () => {
               const Icon = tab.icon;
               const isActive = selectedListingType === tab.id;
               const count = tab.id === "ALL" ? data.length : data.filter(p => p.listingType === tab.id).length;
-              
+
               return (
                 <button
                   key={tab.id}
                   onClick={() => setSelectedListingType(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-                    isActive
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${isActive
                       ? `bg-${tab.color}-600 text-white shadow-lg shadow-${tab.color}-500/30`
-                      : isDark 
+                      : isDark
                         ? 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white border border-slate-700'
                         : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-4 h-4" />
                   <span>{tab.label}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    isActive 
-                      ? 'bg-white/20' 
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive
+                      ? 'bg-white/20'
                       : isDark ? 'bg-slate-700' : 'bg-gray-100'
-                  }`}>
+                    }`}>
                     {count}
                   </span>
                 </button>
@@ -303,7 +342,7 @@ const Properties = () => {
                 const Icon = getListingIcon(property.listingType);
                 const colors = getListingColor(property.listingType);
                 const isSelected = selectedProperty?._id === property._id;
-                
+
                 // Get primary image or first image
                 const getPrimaryImage = () => {
                   if (!property.images || property.images.length === 0) return null;
@@ -312,16 +351,15 @@ const Properties = () => {
                   return typeof firstImg === 'string' ? firstImg : firstImg?.url;
                 };
                 const thumbnailUrl = getPrimaryImage();
-                
+
                 return (
                   <div
                     key={property._id}
                     onClick={() => handlePropertyClick(property)}
-                    className={`p-4 cursor-pointer transition-all hover:bg-slate-800/50 ${
-                      isSelected 
+                    className={`p-4 cursor-pointer transition-all hover:bg-slate-800/50 ${isSelected
                         ? isDark ? 'bg-slate-800 border-l-4 border-indigo-500' : 'bg-indigo-50 border-l-4 border-indigo-500'
                         : ''
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start gap-3">
                       {/* Thumbnail or Icon */}
@@ -334,7 +372,7 @@ const Properties = () => {
                           <Icon className={`w-6 h-6 ${colors.text}`} />
                         </div>
                       )}
-                      
+
                       {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
@@ -345,14 +383,14 @@ const Properties = () => {
                             {formatTimeAgo(property.createdAt)}
                           </span>
                         </div>
-                        
+
                         <div className="flex items-center gap-1 mb-1">
                           <MapPin className={`w-3 h-3 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} />
                           <span className={`text-sm truncate ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
                             {property.location?.locality || property.location?.city || "Location not specified"}
                           </span>
                         </div>
-                        
+
                         <div className="flex items-center justify-between">
                           <span className={`text-sm font-bold ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
                             {formatPrice(property)}
@@ -361,19 +399,18 @@ const Properties = () => {
                             {property.isPremium && (
                               <Crown className="w-4 h-4 text-yellow-500" />
                             )}
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${
-                              property.status === "ACTIVE" 
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${property.status === "ACTIVE"
                                 ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
                                 : property.status === "PENDING"
-                                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400'
-                                : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400'
-                            }`}>
+                                  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400'
+                                  : 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400'
+                              }`}>
                               {property.status}
                             </span>
                           </div>
                         </div>
                       </div>
-                      
+
                       <ChevronRight className={`w-5 h-5 ${isDark ? 'text-slate-600' : 'text-gray-300'}`} />
                     </div>
                   </div>
@@ -399,13 +436,13 @@ const Properties = () => {
       {/* RIGHT PANEL - Property Details */}
       {selectedProperty && (
         <div className={`hidden lg:flex flex-1 flex-col ${isDark ? 'bg-slate-800/50' : 'bg-white'}`}>
-          
+
           {/* Header */}
           <div className={`flex items-center justify-between p-4 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
             <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
               Property Details
             </h2>
-            <button 
+            <button
               onClick={closeDetailPanel}
               className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500'}`}
             >
@@ -420,7 +457,7 @@ const Properties = () => {
             </div>
           ) : propertyDetails ? (
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
-              
+
               {/* Property Header Card */}
               <div className={`rounded-2xl p-6 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
                 <div className="flex items-start gap-4">
@@ -431,7 +468,7 @@ const Properties = () => {
                       return <Icon className={`w-8 h-8 ${getListingColor(propertyDetails.listingType).text}`} />;
                     })()}
                   </div>
-                  
+
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`px-2 py-1 rounded-lg text-xs font-medium ${getListingColor(propertyDetails.listingType).bg} ${getListingColor(propertyDetails.listingType).text}`}>
@@ -448,18 +485,18 @@ const Properties = () => {
                         </span>
                       )}
                     </div>
-                    
+
                     <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {propertyDetails.propertyCategory || propertyDetails.listingType}
                     </h3>
-                    
+
                     <div className="flex items-center gap-1 mt-1">
                       <MapPin className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} />
                       <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
                         {[propertyDetails.location?.locality, propertyDetails.location?.city].filter(Boolean).join(", ") || "Location not specified"}
                       </span>
                     </div>
-                    
+
                     <div className={`text-2xl font-bold mt-3 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
                       {formatPrice(propertyDetails)}
                       {propertyDetails.listingType === "RENT" && <span className="text-sm font-normal opacity-60">/month</span>}
@@ -472,11 +509,10 @@ const Properties = () => {
               <div className={`flex items-center justify-between p-4 rounded-xl ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
                 <div>
                   <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>Current Status</p>
-                  <p className={`text-lg font-semibold ${
-                    propertyDetails.status === "ACTIVE" ? 'text-green-500' :
-                    propertyDetails.status === "PENDING" ? 'text-yellow-500' :
-                    propertyDetails.status === "REJECTED" ? 'text-red-500' : 'text-gray-500'
-                  }`}>
+                  <p className={`text-lg font-semibold ${propertyDetails.status === "ACTIVE" ? 'text-green-500' :
+                      propertyDetails.status === "PENDING" ? 'text-yellow-500' :
+                        propertyDetails.status === "REJECTED" ? 'text-red-500' : 'text-gray-500'
+                    }`}>
                     {propertyDetails.status}
                   </p>
                 </div>
@@ -484,7 +520,7 @@ const Properties = () => {
                   <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>Listing Score</p>
                   <div className="flex items-center gap-2">
                     <div className={`w-24 h-2 rounded-full ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}>
-                      <div 
+                      <div
                         className="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500"
                         style={{ width: `${propertyDetails.listingScore || 0}%` }}
                       />
@@ -560,7 +596,7 @@ const Properties = () => {
               )}
 
               {/* ===== DYNAMIC PROPERTY TYPE DETAILS ===== */}
-              
+
               {/* RESIDENTIAL Details */}
               {propertyDetails.residentialDetails && (propertyDetails.listingType === "RENT" || propertyDetails.listingType === "SELL") && propertyDetails.propertyType === "RESIDENTIAL" && (
                 <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
@@ -635,7 +671,7 @@ const Properties = () => {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Furnishing */}
                   {propertyDetails.residentialDetails.furnishing?.type && (
                     <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
@@ -915,12 +951,12 @@ const Properties = () => {
                   <h4 className={`text-sm font-semibold mb-4 flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
                     <Users className="w-4 h-4" /> Co-Living Details
                   </h4>
-                  
+
                   {/* Profile Section */}
                   <div className="flex items-center gap-4 mb-4">
                     {propertyDetails.coLivingDetails.profileImage && (
-                      <img 
-                        src={propertyDetails.coLivingDetails.profileImage} 
+                      <img
+                        src={propertyDetails.coLivingDetails.profileImage}
                         alt="Profile"
                         className="w-16 h-16 rounded-full object-cover"
                       />
@@ -1112,7 +1148,7 @@ const Properties = () => {
                 }
                 return null;
               })()}
-              
+
               {/* Images */}
               {propertyDetails.images && propertyDetails.images.length > 0 ? (
                 <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
@@ -1124,15 +1160,15 @@ const Properties = () => {
                       // Handle both object format {url, publicId} and string format
                       const imageUrl = typeof img === 'string' ? img : img?.url;
                       const isPrimary = typeof img === 'object' && img?.isPrimary;
-                      
+
                       console.log(`Image ${idx}:`, img, "URL:", imageUrl);
-                      
+
                       return (
                         <div key={idx} className={`relative aspect-square rounded-lg overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}>
                           {imageUrl ? (
-                            <img 
-                              src={imageUrl} 
-                              alt={`Property ${idx + 1}`} 
+                            <img
+                              src={imageUrl}
+                              alt={`Property ${idx + 1}`}
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 console.log("Image load error for:", imageUrl);
@@ -1160,7 +1196,7 @@ const Properties = () => {
                   <h4 className={`text-sm font-semibold mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Photos</h4>
                   <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
                     No images available !
-                     {/* (images: {JSON.stringify(propertyDetails?.images)}) */}
+                    {/* (images: {JSON.stringify(propertyDetails?.images)}) */}
                   </p>
                 </div>
               )}
@@ -1188,17 +1224,16 @@ const Properties = () => {
                   Reject
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-3 gap-2">
                 {propertyDetails.isPremium ? (
                   <button
                     onClick={handleRemovePremium}
                     disabled={actionLoading}
-                    className={`flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-sm font-medium transition ${
-                      isDark 
-                        ? 'bg-slate-700 text-yellow-400 hover:bg-slate-600' 
+                    className={`flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-sm font-medium transition ${isDark
+                        ? 'bg-slate-700 text-yellow-400 hover:bg-slate-600'
                         : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                    }`}
+                      }`}
                   >
                     <Crown className="w-4 h-4" />
                     Remove Premium
@@ -1207,36 +1242,22 @@ const Properties = () => {
                   <button
                     onClick={handleMakePremium}
                     disabled={actionLoading}
-                    className={`flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-sm font-medium transition ${
-                      isDark 
-                        ? 'bg-yellow-900/50 text-yellow-400 hover:bg-yellow-900' 
+                    className={`flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-sm font-medium transition ${isDark
+                        ? 'bg-yellow-900/50 text-yellow-400 hover:bg-yellow-900'
                         : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                    }`}
+                      }`}
                   >
                     <Crown className="w-4 h-4" />
                     Make Premium
                   </button>
                 )}
                 <button
-                  onClick={() => handleStatusChange("BLOCKED")}
-                  disabled={actionLoading || propertyDetails.status === "BLOCKED"}
-                  className={`flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-sm font-medium transition ${
-                    isDark 
-                      ? 'bg-slate-700 text-orange-400 hover:bg-slate-600' 
-                      : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-                  }`}
-                >
-                  <Ban className="w-4 h-4" />
-                  Block
-                </button>
-                <button
                   onClick={handleDelete}
                   disabled={actionLoading}
-                  className={`flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-sm font-medium transition ${
-                    isDark 
-                      ? 'bg-red-900/50 text-red-400 hover:bg-red-900' 
+                  className={`flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-sm font-medium transition ${isDark
+                      ? 'bg-red-900/50 text-red-400 hover:bg-red-900'
                       : 'bg-red-100 text-red-700 hover:bg-red-200'
-                  }`}
+                    }`}
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete

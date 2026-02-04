@@ -7,8 +7,14 @@ const permit = require("../../middleware/permission.middleware");
 // All listings
 router.get("/", adminAuth, controller.getAll);
 
+// Get properties of a specific user
+router.get("/user/:userId", adminAuth, controller.getUserProperties);
+
 // Single listing
 router.get("/:id", adminAuth, controller.getOne);
+
+// Update property details
+router.put("/:id", adminAuth, controller.updateProperty);
 
 // Change status
 router.patch("/:id/status", adminAuth, controller.updateStatus);

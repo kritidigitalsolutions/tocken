@@ -57,11 +57,30 @@ exports.getAllUsers = async (req, res) => {
 // ✅ UPDATE USER (block / plan)
 exports.updateUser = async (req, res) => {
   try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    // Validate ID
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required"
+      });
+    }
+
+    // Update user
     const user = await User.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
+      id,
+      { $set: updates },
+      { new: true, runValidators: false }
+    ).populate("activePlan", "name price duration");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -69,9 +88,10 @@ exports.updateUser = async (req, res) => {
       user
     });
   } catch (error) {
+    console.error("Update user error:", error);
     res.status(500).json({
       success: false,
-      message: "User update failed"
+      message: error.message || "User update failed"
     });
   }
 };

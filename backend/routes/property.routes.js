@@ -10,8 +10,8 @@ const upload = require("../middleware/multer.middleware");
 // Search locations for filter dropdown (OpenStreetMap)
 router.get("/locations ", filterController.searchLocationsForFilter);
 
-// Filter properties (main filter API for app)
-router.get("/filter", filterController.filterProperties);
+// Filter properties (main filter API for app) - POST method for sending filter data in body
+router.post("/filter", filterController.filterProperties);
 
 // Search properties by keyword
 router.get("/search", filterController.searchProperties);
