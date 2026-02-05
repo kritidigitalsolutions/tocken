@@ -1,8 +1,9 @@
 # 🚀 Token App Admin Panel - API Documentation
 
-**Base URL:** `http://localhost:5000/api`  
-**Last Updated:** January 28, 2026  
-**Version:** 2.0
+**Base URL (Development):** `http://localhost:5000/api`  
+**Base URL (Production):** `https://backend-tocken-admin-panel.vercel.app/api`  
+**Last Updated:** February 5, 2026  
+**Version:** 2.1 - Comprehensive Update
 
 ---
 

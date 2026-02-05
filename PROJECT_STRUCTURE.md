@@ -1,7 +1,7 @@
 # 📁 Token App Admin Panel - Project Structure
 
-**Last Updated:** January 28, 2026  
-**Version:** 2.0
+**Last Updated:** February 5, 2026  
+**Version:** 2.1 - Comprehensive Update with API Consumption Layer
 
 ---
 
@@ -156,69 +156,202 @@ frontend/
     ├── 📄 App.js                   # Main app component with routes
     ├── 📄 App.css                  # App-level styles
     │
-    ├── 📁 api/                     # 🌐 API Service Layer
-    │   ├── 📄 api.js               # Axios instance configuration
-    │   ├── 📄 authApi.js           # Admin authentication APIs
-    │   ├── 📄 userApi.js           # User management APIs
-    │   ├── 📄 propertyApi.js       # Property management APIs
-    │   ├── 📄 bannerApi.js         # Banner APIs
-    │   ├── 📄 wallpaperApi.js      # Wallpaper APIs
-    │   ├── 📄 planApi.js           # Plan management APIs
-    │   ├── 📄 faqApi.js            # FAQ APIs
-    │   ├── 📄 feedbackApi.js       # Feedback APIs
-    │   ├── 📄 leadApi.js           # Lead management APIs
-    │   ├── 📄 notificationApi.js   # Notification APIs
-    │   ├── 📄 bookmarkApi.js       # Bookmark APIs
-    │   ├── 📄 dashboardApi.js      # Dashboard analytics APIs
-    │   ├── 📄 legalApi.js          # Legal content APIs
-    │   ├── 📄 aboutUsApi.js        # About us APIs
-    │   └── 📄 deletionRequestApi.js # Account deletion APIs
+### Frontend API Layer (API Consumption)
+
+The frontend uses a well-organized service layer for API communication:
+
+```
+frontend/src/api/
+├── 📄 api.js                      # 🔑 Core Axios configuration
+│   ├── Base URL configuration
+│   ├── JWT token interceptor (request)
+│   ├── Token expiry handler (response - 401)
+│   └── Auto-redirect to login on 401
+│
+├── 📁 Admin APIs (Protected Routes)
+│   ├── 📄 admin.dashboard.api.js   # Dashboard analytics
+│   ├── 📄 admin.property.api.js    # Property CRUD operations
+│   ├── 📄 admin.lead.api.js        # Lead management
+│   ├── 📄 admin.notification.api.js # Notifications CRUD
+│   ├── 📄 admin.feedback.api.js    # Feedback management
+│   ├── 📄 admin.bookmark.api.js    # Bookmark analytics
+│   └── 📄 admin.audit.api.js       # Audit logs
+│
+├── 📁 Public/User APIs
+│   ├── 📄 user.api.js              # User profile, auth
+│   ├── 📄 banner.api.js            # Banner retrieval
+│   ├── 📄 plans.js                 # Plans management
+│   ├── 📄 faq.api.js               # FAQ retrieval
+│   ├── 📄 dashboard.api.js         # Dashboard data
+│   ├── 📄 legal.api.js             # Legal content
+│   ├── 📄 aboutUs.api.js           # About us content
+│   └── 📄 deletionRequest.api.js   # Account deletion requests
+│
+└── 🔐 Authentication Pattern
+    ├── Token stored in localStorage
+    ├── Automatically attached to all requests
+    ├── Handles token expiry (401)
+    └── Auto-redirect to /login on unauthorized
+```
+
+**Key Features:**
+- ✅ Centralized API configuration
+- ✅ Automatic JWT token injection
+- ✅ Global error handling
+- ✅ Token expiry detection (401)
+- ✅ Auto-redirect on auth failure
+- ✅ FormData support for file uploads
     │
-    ├── 📁 context/                 # 🔄 React Context
-    │   ├── 📄 AuthContext.jsx      # Auth state management
-    │   └── 📄 ThemeContext.jsx     # Dark/Light theme toggle
+    ├── 📁 context/                 # 🔄 React Context (State Management)
+    │   ├── 📄 AuthContext.jsx      # 🔐 Authentication State
+    │   │   ├── Stores admin token
+    │   │   ├── Provides login/logout
+    │   │   └── Protected route guard
+    │   │
+    │   ├── 📄 ThemeContext.jsx     # 🎨 Theme State (Dark/Light)
+    │   │   └── Global theme toggle
+    │   │
+    │   └── 📄 DataContext.jsx      # 📊 Global Data State
+    │       ├── Cached API responses
+    │       └── Real-time data updates
     │
     ├── 📁 components/              # 🧩 Reusable Components
-    │   ├── 📄 ProtectedRoute.jsx   # Auth route wrapper
-    │   ├── 📁 common/              # Common UI components
-    │   │   ├── 📄 Button.jsx
-    │   │   ├── 📄 Input.jsx
-    │   │   ├── 📄 Modal.jsx
-    │   │   └── 📄 Loader.jsx
-    │   ├── 📁 forms/               # Form components
-    │   ├── 📁 modals/              # Modal components
-    │   └── 📁 tables/              # Table components
-    │
-    ├── 📁 layout/                  # 📐 Layout Components
-    │   ├── 📄 AdminLayout.jsx      # Main admin layout with sidebar
-    │   ├── 📄 Sidebar.jsx          # Admin navigation sidebar
-    │   └── 📄 Header.jsx           # Top navigation bar
+    │   ├── 📄 ProtectedRoute.jsx   # Route protection wrapper
+    │   │   └── Redirects to login if not authenticated
+    │   │
+    │   ├── 📁 common/              # UI Components (Shared)
+    │   │   ├── 📄 Button.jsx       # Styled button component
+    │   │   ├── 📄 Input.jsx        # Styled input field
+    │   │   ├── 📄 Modal.jsx        # Reusable modal dialog
+    │   │   ├── 📄 Loader.jsx       # Loading spinner
+    │   │   ├── 📄 Badge.jsx        # Status badges
+    │   │   ├── 📄 Alert.jsx        # Alert/notification component
+    │   │   └── 📄 Pagination.jsx   # Pagination component
+    │   │
+    │   ├── 📁 forms/               # Form Components
+    │   │   ├── 📄 PlanForm.jsx     # Plan CRUD form
+    │   │   ├── 📄 BannerForm.jsx   # Banner creation form
+    │   │   ├── 📄 FAQForm.jsx      # FAQ form
+    │   │   └── 📄 LegalForm.jsx    # Legal content editor
+    │   │
+    │   ├── 📁 modals/              # Modal Components
+    │   │   ├── 📄 ConfirmModal.jsx # Confirmation dialog
+    │   │   ├── 📄 ViewModal.jsx    # View details modal
+    │   │   └── 📄 EditModal.jsx    # Edit inline modal
+    │   │
+    │   └── 📁 tables/              # Table Components
+    │       ├── 📄 UsersTable.jsx   # User listings table
+    │       ├── 📄 PropertiesTable.jsx # Property listings
+    │       ├── 📄 LeadsTable.jsx   # Leads table
+    │       └── 📄 FeedbackTable.jsx # Feedback table
     │
     ├── 📁 pages/                   # 📄 Page Components
-    │   ├── 📄 Login.jsx            # Admin login page
+    │   ├── 📄 Login.jsx            # 🔑 Admin authentication page
+    │   │   └── Email/Password login form
     │   │
-    │   └── 📁 admin/               # 👑 Admin Pages
-    │       ├── 📁 dashboard/       # Dashboard analytics
-    │       ├── 📁 users/           # User management
-    │       ├── 📁 properties/      # Property management & details
-    │       ├── 📁 banners/         # Banner management
-    │       ├── 📁 wallpapers/      # Wallpaper management & details
-    │       ├── 📁 plans/           # Premium plan management
-    │       ├── 📁 faqs/            # FAQ management
-    │       ├── 📁 feedbacks/       # Feedback management
-    │       ├── 📁 leads/           # Lead management
-    │       ├── 📁 notifications/   # Notification management
-    │       ├── 📁 bookmarks/       # Bookmark analytics
-    │       ├── 📁 legal/           # Privacy & Terms editor
-    │       ├── 📁 aboutUs/         # About us editor
-    │       ├── 📁 audit/           # Audit log viewer
-    │       └── 📁 deletionRequests/ # Account deletion requests
+    │   └── 📁 admin/               # 👑 Admin Dashboard Pages
+    │       ├── 📁 dashboard/       # 📊 Analytics Dashboard
+    │       │   ├── 📄 Dashboard.jsx # Main analytics page
+    │       │   ├── 📄 StatsCard.jsx # Stats summary cards
+    │       │   └── 📄 Charts.jsx   # Analytics charts
+    │       │
+    │       ├── 📁 users/           # 👥 User Management
+    │       │   ├── 📄 UsersList.jsx # All users table
+    │       │   ├── 📄 UserDetail.jsx # User profile view
+    │       │   └── 📄 UserActions.jsx # Block/Delete actions
+    │       │
+    │       ├── 📁 properties/      # 🏠 Property Management
+    │       │   ├── 📄 PropertiesList.jsx # Property listings
+    │       │   ├── 📄 PropertyDetail.jsx # Property details view
+    │       │   ├── 📄 PropertyApproval.jsx # Approval/Rejection
+    │       │   └── 📄 PremiumManagement.jsx # Make/Remove premium
+    │       │
+    │       ├── 📁 leads/           # 📞 Lead Management
+    │       │   ├── 📄 LeadsList.jsx # All leads table
+    │       │   ├── 📄 LeadDetail.jsx # Lead details
+    │       │   └── 📄 LeadActions.jsx # Mark spam/Update status
+    │       │
+    │       ├── 📁 banners/         # 🖼️ Banner Management
+    │       │   ├── 📄 BannersList.jsx # Banners listing
+    │       │   ├── 📄 BannerCreate.jsx # Create banner
+    │       │   ├── 📄 BannerEdit.jsx # Edit banner
+    │       │   └── 📄 BannerToggle.jsx # Toggle status
+    │       │
+    │       ├── 📁 wallpapers/      # 🌄 Wallpaper Management
+    │       │   ├── 📄 WallpapersList.jsx # Wallpapers listing
+    │       │   ├── 📄 WallpaperCreate.jsx # Create wallpaper
+    │       │   ├── 📄 WallpaperEdit.jsx # Edit wallpaper
+    │       │   └── 📄 WallpaperDetail.jsx # View details
+    │       │
+    │       ├── 📁 plans/           # 💰 Premium Plan Management
+    │       │   ├── 📄 PlansList.jsx # Plans table
+    │       │   ├── 📄 PlanCreate.jsx # Create plan form
+    │       │   └── 📄 PlanEdit.jsx # Edit plan
+    │       │
+    │       ├── 📁 faqs/            # ❓ FAQ Management
+    │       │   ├── 📄 FAQsList.jsx # FAQs listing
+    │       │   ├── 📄 FAQCreate.jsx # Create FAQ
+    │       │   └── 📄 FAQEdit.jsx # Edit FAQ
+    │       │
+    │       ├── 📁 feedbacks/       # 💬 Feedback Management
+    │       │   ├── 📄 FeedbacksList.jsx # All feedback table
+    │       │   ├── 📄 FeedbackDetail.jsx # Feedback details
+    │       │   └── 📄 FeedbackStats.jsx # Feedback statistics
+    │       │
+    │       ├── 📁 notifications/   # 🔔 Notification Management
+    │       │   ├── 📄 NotificationsList.jsx # All notifications
+    │       │   ├── 📄 NotificationCreate.jsx # Create notification
+    │       │   └── 📄 NotificationStats.jsx # Stats
+    │       │
+    │       ├── 📁 bookmarks/       # 📚 Bookmark Analytics
+    │       │   ├── 📄 BookmarkStats.jsx # Analytics page
+    │       │   └── 📄 BookmarkList.jsx # Bookmarks list
+    │       │
+    │       ├── 📁 legal/           # ⚖️ Legal Content
+    │       │   ├── 📄 PrivacyPolicy.jsx # Privacy policy editor
+    │       │   └── 📄 TermsConditions.jsx # Terms editor
+    │       │
+    │       ├── 📁 aboutUs/         # ℹ️ About Us Management
+    │       │   └── 📄 AboutUsEditor.jsx # Rich text editor
+    │       │
+    │       ├── 📁 audit/           # 📜 Audit Logs
+    │       │   └── 📄 AuditLogs.jsx # Admin action logs
+    │       │
+    │       └── 📁 deletionRequests/ # 🗑️ Account Deletion Requests
+    │           ├── 📄 DeletionRequestsList.jsx # Pending requests
+    │           └── 📄 RequestActions.jsx # Approve/Reject actions
     │
-    ├── 📁 routes/                  # 🛣️ Route Configuration
-    │   └── 📄 routes.jsx           # App routes definition
+    ├── 📁 layout/                  # 📐 Layout Components
+    │   ├── 📄 AdminLayout.jsx      # 🎨 Main admin layout wrapper
+    │   │   ├── Sidebar navigation
+    │   │   ├── Top header bar
+    │   │   ├── Main content area
+    │   │   └── Responsive grid
+    │   │
+    │   ├── 📄 Sidebar.jsx          # 🧭 Admin navigation sidebar
+    │   │   ├── Menu items
+    │   │   ├── Collapse/Expand
+    │   │   └── Active state indicator
+    │   │
+    │   └── 📄 Header.jsx           # 🔝 Top navigation bar
+    │       ├── Admin profile menu
+    │       ├── Notifications icon
+    │       ├── Logout button
+    │       └── Theme toggle
+    │
+    ├── 📁 routes/                  # 🛣️ Routing Configuration
+    │   └── 📄 routes.jsx           # Route definitions & guards
+    │       ├── Public routes (/login)
+    │       ├── Protected admin routes
+    │       ├── Nested route structure
+    │       └── 404 fallback
     │
     └── 📁 utils/                   # 🔧 Utility Functions
-        └── 📄 helpers.js           # Helper functions
+        ├── 📄 helpers.js           # Common utilities
+        ├── 📄 validators.js        # Form validation
+        ├── 📄 formatters.js        # Data formatting
+        ├── 📄 constants.js         # App constants
+        └── 📄 colors.js            # Color palette
 ```
 
 ---
@@ -238,13 +371,16 @@ frontend/
 | **Node-cron** | Scheduled tasks |
 
 ### Frontend
-| Technology | Purpose |
-|------------|---------|
-| **React.js** | UI library |
-| **React Router** | Client-side routing |
-| **Axios** | HTTP client |
-| **Lucide React** | Icon library |
-| **Tailwind CSS** | Styling (if configured) |
+| Technology | Purpose | Version |
+|------------|---------|---------|
+| **React.js** | UI library & components | ^19.2.3 |
+| **React Router DOM** | Client-side routing | ^7.12.0 |
+| **Axios** | HTTP client & API calls | ^1.13.2 |
+| **Lucide React** | Icon library (SVG icons) | ^0.562.0 |
+| **Tailwind CSS** | Utility-first CSS framework | ^3.4.19 |
+| **React Hot Toast** | Toast notifications | ^2.6.0 |
+| **CLSX** | Conditional className utility | ^2.1.1 |
+| **React Scripts** | CRA build & dev tools | 5.0.1 |
 
 ---
 
@@ -368,4 +504,6 @@ NODE_ENV=development
 
 ---
 
-**Documentation Generated:** January 28, 2026
+**Documentation Generated:** February 5, 2026  
+**Next Documentation:** [API_DOCUMENTATION.md](API_DOCUMENTATION.md)  
+**API Consumption Guide:** [API_CONSUMPTION_GUIDE.md](API_CONSUMPTION_GUIDE.md)

@@ -25,7 +25,7 @@ import {
   MessageCircle,
   Eye,
   MapPin,
-  IndianRupee,
+  // IndianRupee,
   CheckCircle,
   XCircle,
   AlertCircle,
@@ -35,8 +35,8 @@ import {
   Image as ImageIcon,
   Key,
   Tag,
-  Ban,
-  Mail
+  // Ban,
+  // Mail
 } from "lucide-react";
 
 const defaultAvatar = "https://www.pngall.com/wp-content/uploads/15/User-PNG-Images-HD.png";
