@@ -1,16 +1,3 @@
-// const FAQ = require("../../models/faq.model");
-
-// exports.createFAQ = async (req, res) => {
-//   const faq = await FAQ.create(req.body);
-//   res.status(201).json({ success: true, faq });
-// };
-
-// exports.getFAQs = async (req, res) => {
-//   const faqs = await FAQ.find();
-//   res.json({ success: true, faqs });
-// };
-
-
 const FAQ = require("../../models/faq.model");
 
 // ✅ CREATE FAQ

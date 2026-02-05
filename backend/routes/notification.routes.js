@@ -8,6 +8,9 @@ const {
     markAllAsRead
 } = require("../controllers/notification.controller");
 
+
+const { saveFcmToken } = require("../controllers/user.controller");
+
 // All routes require authentication
 router.use(isAuth);
 
@@ -23,4 +26,6 @@ router.patch("/read-all", markAllAsRead);
 // PATCH /api/notifications/:id/read - Mark single as read
 router.patch("/:id/read", markAsRead);
 
+// 🔐 User must be logged in
+router.post("/fcm-token", isAuth, saveFcmToken);
 module.exports = router;

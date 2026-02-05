@@ -488,3 +488,35 @@ exports.getDeletionStatus = async (req, res) => {
     });
   }
 };
+
+
+exports.saveFcmToken = async (req, res) => {
+    try {
+        const { fcmToken } = req.body;
+
+        if (!fcmToken) {
+            return res.status(400).json({
+                success: false,
+                message: "FCM token is required"
+            });
+        }
+
+        req.user.fcmToken = fcmToken;
+        await req.user.save();
+
+        res.status(200).json({
+            success: true,
+            message: "FCM token saved successfully"
+        });
+    } catch (error) {
+        console.error("Save FCM token error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to save FCM token",
+            error: error.message
+        });
+    }
+};
+
+
+

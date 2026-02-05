@@ -1,5 +1,6 @@
 const Notification = require("../../models/notification.model");
 const User = require("../../models/user.model");
+const { sendPushNotification } = require("../../utils/fcm.service");
 
 /**
  * Create a new notification (Admin)
@@ -49,6 +50,42 @@ const createNotification = async (req, res) => {
         // Populate createdBy for response
         await notification.populate("createdBy", "name email");
 
+        // 🔔 SEND PUSH NOTIFICATION
+        if (targetUserId) {
+            // Single user
+            if (user.fcmToken) {
+                await sendPushNotification({
+                    token: user.fcmToken,
+                    title,
+                    body: message,
+                    data: {
+                        notificationId: notification._id.toString(),
+                        type: type || "GENERAL"
+                    }
+                });
+            }
+        } else {
+            // Broadcast / User type
+            const users = await User.find({
+                fcmToken: { $ne: null },
+                ...(targetUserType && targetUserType !== "ALL"
+                    ? { userType: targetUserType }
+                    : {})
+            });
+
+            for (const u of users) {
+                await sendPushNotification({
+                    token: u.fcmToken,
+                    title,
+                    body: message,
+                    data: {
+                        notificationId: notification._id.toString(),
+                        type: type || "GENERAL"
+                    }
+                });
+            }
+        }
+
         res.status(201).json({
             success: true,
             message: "Notification created successfully",
@@ -63,6 +100,7 @@ const createNotification = async (req, res) => {
         });
     }
 };
+
 
 /**
  * Get all notifications (Admin)

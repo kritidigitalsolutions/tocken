@@ -91,6 +91,13 @@ const userSchema = new mongoose.Schema(
       ref: "Property"
     }],
 
+    // for notification
+    fcmToken: {
+      type: String,
+      default: null
+    },
+
+
     // Account Deletion Request
     deletionRequest: {
       status: {

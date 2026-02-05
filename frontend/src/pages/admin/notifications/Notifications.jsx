@@ -46,6 +46,7 @@ const Notifications = () => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const { isDark } = useTheme();
+    const [sending, setSending] = useState(false);
 
     const [openForm, setOpenForm] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
@@ -117,14 +118,22 @@ const Notifications = () => {
                 payload.targetUserType = formData.targetUserType;
             }
 
+            // if (selectedNotification) {
+            //     await updateNotification(selectedNotification._id, payload);
+            //     toast.success("Notification updated successfully");
+            // } else {
+            //     await createNotification(payload);
+            //     toast.success("Notification sent & push delivered (if user is online)");
+            // }
             if (selectedNotification) {
                 await updateNotification(selectedNotification._id, payload);
                 toast.success("Notification updated successfully");
             } else {
                 await createNotification(payload);
-                toast.success("Notification sent successfully");
+                toast.success("Notification sent & pushed to devices");
             }
 
+            setSending(false);
             setOpenForm(false);
             setSelectedNotification(null);
             setFormData(initialForm);
@@ -379,8 +388,11 @@ const Notifications = () => {
                         </div>
                     )}
 
-                    <Button onClick={handleSubmit} className="w-full">
+                    {/* <Button onClick={handleSubmit} className="w-full">
                         {selectedNotification ? "Update" : "Send Notification"}
+                    </Button> */}
+                    <Button onClick={handleSubmit} className="w-full" disabled={sending}>
+                        {sending ? "Sending..." : selectedNotification ? "Update" : "Send Notification"}
                     </Button>
                 </div>
             </Modal>

@@ -224,7 +224,7 @@ const Users = () => {
   const handlePropertyStatusChange = async (propertyId, newStatus) => {
     try {
       setActionLoading(true);
-      const response = await updatePropertyStatus(propertyId, newStatus);
+      await updatePropertyStatus(propertyId, newStatus);
       toast.success(`Property status changed to ${newStatus}`);
       
       // Update local state
@@ -412,7 +412,7 @@ const Users = () => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     setActionLoading(true);
     try {
-      const response = await deleteUser(userId);
+      await deleteUser(userId);
       toast.success("User deleted successfully");
       setUsers(prevUsers => prevUsers.filter(u => u._id !== userId));
       if (selectedUser?._id === userId) {
