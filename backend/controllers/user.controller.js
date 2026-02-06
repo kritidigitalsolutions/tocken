@@ -501,12 +501,34 @@ exports.saveFcmToken = async (req, res) => {
             });
         }
 
-        req.user.fcmToken = fcmToken;
-        await req.user.save();
+        // Validate FCM token format
+        if (typeof fcmToken !== 'string' || fcmToken.length < 50) {
+            console.warn("⚠️  Invalid FCM token format received:", fcmToken?.substring(0, 30));
+            return res.status(400).json({
+                success: false,
+                message: "Invalid FCM token format. Token should be a long string from Firebase."
+            });
+        }
+
+        console.log("📝 Saving FCM token for user:", req.user.id, "Token:", fcmToken.substring(0, 30) + "...");
+
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            { fcmToken },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
 
         res.status(200).json({
             success: true,
-            message: "FCM token saved successfully"
+            message: "FCM token saved successfully",
+            tokenPreview: fcmToken.substring(0, 30) + "..."
         });
     } catch (error) {
         console.error("Save FCM token error:", error);
@@ -518,5 +540,160 @@ exports.saveFcmToken = async (req, res) => {
     }
 };
 
+/**
+ * TRACK PROPERTY VIEW
+ * POST /api/user/property-view
+ * Body: { propertyId }
+ */
+exports.trackPropertyView = async (req, res) => {
+    try {
+        const { propertyId } = req.body;
+        const userId = req.user.id;
 
+        if (!propertyId) {
+            return res.status(400).json({
+                success: false,
+                message: "Property ID is required"
+            });
+        }
 
+        // Verify property exists
+        const Property = require("../models/property.model");
+        const property = await Property.findById(propertyId);
+        if (!property) {
+            return res.status(404).json({
+                success: false,
+                message: "Property not found"
+            });
+        }
+
+        // Get user
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        // Check if property already in mostVisitedProperties
+        const existingView = user.mostVisitedProperties.find(
+            (v) => v.property.toString() === propertyId
+        );
+
+        if (existingView) {
+            // Increment view count
+            existingView.viewCount += 1;
+            existingView.lastViewedAt = new Date();
+        } else {
+            // Add new viewed property
+            user.mostVisitedProperties.push({
+                property: propertyId,
+                viewCount: 1,
+                lastViewedAt: new Date()
+            });
+        }
+
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Property view tracked successfully",
+            viewCount: existingView ? existingView.viewCount : 1
+        });
+    } catch (error) {
+        console.error("Track property view error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to track property view",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * GET MOST VISITED PROPERTIES
+ * GET /api/user/most-visited-properties?limit=10&sortBy=viewCount
+ */
+exports.getMostVisitedProperties = async (req, res) => {
+    try {
+        const { limit = 10, sortBy = "viewCount" } = req.query;
+        const userId = req.user.id;
+
+        const user = await User.findById(userId).populate({
+            path: "mostVisitedProperties.property",
+            select: "title price location images lifeCycleStage propertyType propertySubType description"
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        // Sort by viewCount or lastViewedAt
+        let sortedProperties = [...user.mostVisitedProperties];
+        
+        if (sortBy === "viewCount") {
+            sortedProperties.sort((a, b) => b.viewCount - a.viewCount);
+        } else if (sortBy === "recent") {
+            sortedProperties.sort((a, b) => new Date(b.lastViewedAt) - new Date(a.lastViewedAt));
+        }
+
+        // Apply limit
+        sortedProperties = sortedProperties.slice(0, parseInt(limit));
+
+        res.status(200).json({
+            success: true,
+            count: sortedProperties.length,
+            properties: sortedProperties.map(v => ({
+                ...v.property.toObject(),
+                viewCount: v.viewCount,
+                lastViewedAt: v.lastViewedAt
+            }))
+        });
+    } catch (error) {
+        console.error("Get most visited properties error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch most visited properties",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * CLEAR MOST VISITED PROPERTIES
+ * DELETE /api/user/most-visited-properties
+ */
+exports.clearMostVisitedProperties = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { mostVisitedProperties: [] },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Most visited properties cleared successfully"
+        });
+    } catch (error) {
+        console.error("Clear most visited properties error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to clear most visited properties",
+            error: error.message
+        });
+    }
+};

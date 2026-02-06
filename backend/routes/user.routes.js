@@ -11,6 +11,10 @@ const {
     requestAccountDeletion,
     cancelDeletionRequest,
     getDeletionStatus,
+    saveFcmToken,
+    trackPropertyView,
+    getMostVisitedProperties,
+    clearMostVisitedProperties,
 } = require("../controllers/user.controller");
 
 // ✅ User Profile - REST APIs
@@ -33,5 +37,13 @@ router.patch("/phone-privacy", isAuth, togglePhonePrivacy);
 router.get("/deletion-status", isAuth, getDeletionStatus);
 router.post("/request-deletion", isAuth, requestAccountDeletion);
 router.delete("/cancel-deletion", isAuth, cancelDeletionRequest);
+
+// ✅ FCM Token API
+router.post("/fcm-token", isAuth, saveFcmToken);
+
+// ✅ Most Visited Properties APIs
+router.post("/property-view", isAuth, trackPropertyView);
+router.get("/most-visited-properties", isAuth, getMostVisitedProperties);
+router.delete("/most-visited-properties", isAuth, clearMostVisitedProperties);
 
 module.exports = router;

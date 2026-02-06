@@ -6,7 +6,10 @@ const bannerSchema = new mongoose.Schema(
       type: String,
       required: true
     },
-
+    description: {
+      type: String,
+      required: true
+    },
     image: {
       type: String,
       required: true // Firebase Storage URL
@@ -16,12 +19,6 @@ const bannerSchema = new mongoose.Schema(
       type: String,
       default: "" // Firebase Storage file path for deletion
     },
-
-    redirectUrl: {
-      type: String,
-      default: "" // where banner will redirect user
-    },
-
     status: {
       type: String,
       enum: ["Active", "Inactive"],

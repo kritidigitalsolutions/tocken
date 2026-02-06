@@ -83,6 +83,25 @@ const notificationSchema = new mongoose.Schema(
         isActive: {
             type: Boolean,
             default: true
+        },
+
+        // FCM Delivery Status
+        deliveryStatus: {
+            type: String,
+            enum: ['PENDING', 'SENT', 'FAILED'],
+            default: 'PENDING'
+        },
+
+        // Timestamp when notification was sent
+        sentAt: {
+            type: Date,
+            default: null
+        },
+
+        // FCM error response (if failed)
+        fcmResponse: {
+            type: String,
+            default: null
         }
     },
     { timestamps: true }

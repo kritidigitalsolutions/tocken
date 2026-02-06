@@ -11,8 +11,8 @@ exports.getBanners = async (req, res) => {
   try {
     // Only return active banners for public users
     const banners = await Banner.find({ status: "Active" })
-      .select("title image redirectUrl")
-      .sort({ createdAt: -1 });
+      // .select("title image show")
+      // .sort({ createdAt: 2 });
 
     res.json({
       success: true,

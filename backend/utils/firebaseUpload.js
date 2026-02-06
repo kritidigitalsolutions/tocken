@@ -1,4 +1,4 @@
-const bucket = require("../config/firebase");
+const { bucket } = require("../config/firebase");
 const path = require("path");
 
 /**

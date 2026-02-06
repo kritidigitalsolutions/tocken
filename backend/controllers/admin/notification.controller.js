@@ -24,10 +24,12 @@ const createNotification = async (req, res) => {
             createdBy: req.user.id
         };
 
+        let targetUser = null;
+
         // If specific user is targeted
         if (targetUserId) {
-            const user = await User.findById(targetUserId);
-            if (!user) {
+            targetUser = await User.findById(targetUserId);
+            if (!targetUser) {
                 return res.status(404).json({
                     success: false,
                     message: "Target user not found"
@@ -51,11 +53,14 @@ const createNotification = async (req, res) => {
         await notification.populate("createdBy", "name email");
 
         // 🔔 SEND PUSH NOTIFICATION
+        let deliveryStatus = 'SENT';
+        let fcmError = null;
+
         if (targetUserId) {
             // Single user
-            if (user.fcmToken) {
-                await sendPushNotification({
-                    token: user.fcmToken,
+            if (targetUser && targetUser.fcmToken) {
+                const result = await sendPushNotification({
+                    token: targetUser.fcmToken,
                     title,
                     body: message,
                     data: {
@@ -63,6 +68,13 @@ const createNotification = async (req, res) => {
                         type: type || "GENERAL"
                     }
                 });
+                
+                if (result.status === 'FAILED') {
+                    deliveryStatus = 'FAILED';
+                    fcmError = result.error;
+                }
+            } else {
+                deliveryStatus = 'PENDING';
             }
         } else {
             // Broadcast / User type
@@ -73,8 +85,9 @@ const createNotification = async (req, res) => {
                     : {})
             });
 
+            let failedCount = 0;
             for (const u of users) {
-                await sendPushNotification({
+                const result = await sendPushNotification({
                     token: u.fcmToken,
                     title,
                     body: message,
@@ -83,8 +96,26 @@ const createNotification = async (req, res) => {
                         type: type || "GENERAL"
                     }
                 });
+                
+                if (result.status === 'FAILED') {
+                    failedCount++;
+                }
+            }
+
+            // If any FCM sends failed, mark as FAILED
+            if (failedCount > 0) {
+                deliveryStatus = 'FAILED';
+                fcmError = `Failed to deliver to ${failedCount} users`;
             }
         }
+
+        // Update notification with delivery status
+        notification.deliveryStatus = deliveryStatus;
+        notification.sentAt = new Date();
+        if (fcmError) {
+            notification.fcmResponse = fcmError;
+        }
+        await notification.save();
 
         res.status(201).json({
             success: true,

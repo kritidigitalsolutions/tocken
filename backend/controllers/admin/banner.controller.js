@@ -16,7 +16,7 @@ exports.getBanners = async (req, res) => {
 
 exports.createBanner = async (req, res) => {
   try {
-    let { title, status, redirectUrl } = req.body;
+    let { title, description, status } = req.body;
 
     status =
       status?.toLowerCase() === "active" ? "Active" : "Inactive";
@@ -31,8 +31,8 @@ exports.createBanner = async (req, res) => {
 
     const banner = await Banner.create({
       title,
+      description,
       status,
-      redirectUrl,
       image: imageUrl,
       fileName: uploadResult.fileName  // Store for deletion later
     });
@@ -49,7 +49,7 @@ exports.createBanner = async (req, res) => {
 
 exports.updateBanner = async (req, res) => {
   try {
-    const { title, status, redirectUrl } = req.body;
+    const { title, description, status } = req.body;
 
     const banner = await Banner.findById(req.params.id);
     if (!banner) {
@@ -57,7 +57,7 @@ exports.updateBanner = async (req, res) => {
     }
 
     if (title) banner.title = title;
-    if (redirectUrl !== undefined) banner.redirectUrl = redirectUrl;
+    if (description) banner.description = description;
     if (status) banner.status = status;
 
     // Update image only if a new one is provided

@@ -741,7 +741,6 @@ POST http://localhost:5000/api/admin/banners
 **Form Data:**
 - `title` - Banner title
 - `status` - Active/Inactive
-- `redirectUrl` - URL to redirect
 - `image` - Image file (uploads to Firebase Storage)
 
 ---

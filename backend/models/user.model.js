@@ -91,6 +91,22 @@ const userSchema = new mongoose.Schema(
       ref: "Property"
     }],
 
+    // Most visited properties (tracked when user views)
+    mostVisitedProperties: [{
+      property: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Property"
+      },
+      viewCount: {
+        type: Number,
+        default: 1
+      },
+      lastViewedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+
     // for notification
     fcmToken: {
       type: String,

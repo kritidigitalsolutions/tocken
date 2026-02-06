@@ -16,7 +16,7 @@ import {
 
 const initialForm = {
   title: "",
-  redirectUrl: "",
+  description: "",
   status: "Active",
   image: null
 };
@@ -60,7 +60,7 @@ const Banners = () => {
     try {
       const payload = new FormData();
       payload.append("title", formData.title);
-      payload.append("redirectUrl", formData.redirectUrl);
+      payload.append("description", formData.description);
       payload.append("status", formData.status);
       if (formData.image) payload.append("image", formData.image);
 
@@ -219,11 +219,11 @@ const Banners = () => {
           />
 
           <input
-            placeholder="Redirect URL"
+            placeholder="Description"
             className={`w-full p-2 rounded border transition-colors duration-200 ${isDark ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'}`}
-            value={formData.redirectUrl}
+            value={formData.description}
             onChange={(e) =>
-              setFormData({ ...formData, redirectUrl: e.target.value })
+              setFormData({ ...formData, description: e.target.value })
             }
           />
 
