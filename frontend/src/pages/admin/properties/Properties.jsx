@@ -199,11 +199,11 @@ const Properties = () => {
   };
 
   const handleDelete = async () => {
-    if (!selectedProperty || !window.confirm("Are you sure you want to delete this property?")) return;
+    if (!selectedProperty || !window.confirm("⚠️ Are you sure you want to PERMANENTLY delete this property? This action cannot be undone and will remove all property data, images, and related leads.")) return;
     setActionLoading(true);
     try {
       await deleteProperty(selectedProperty._id);
-      toast.success("Property deleted successfully");
+      toast.success("Property permanently deleted");
       await loadProperties();
       closeDetailPanel();
     } catch (err) {
@@ -1260,7 +1260,7 @@ const Properties = () => {
                     }`}
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  {actionLoading ? 'Deleting...' : 'Permanently Delete'}
                 </button>
               </div>
             </div>

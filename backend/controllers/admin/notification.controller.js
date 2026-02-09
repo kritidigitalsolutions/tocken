@@ -52,69 +52,48 @@ const createNotification = async (req, res) => {
         // Populate createdBy for response
         await notification.populate("createdBy", "name email");
 
-        // 🔔 SEND PUSH NOTIFICATION
-        let deliveryStatus = 'SENT';
-        let fcmError = null;
-
-        if (targetUserId) {
-            // Single user
-            if (targetUser && targetUser.fcmToken) {
-                const result = await sendPushNotification({
-                    token: targetUser.fcmToken,
-                    title,
-                    body: message,
-                    data: {
-                        notificationId: notification._id.toString(),
-                        type: type || "GENERAL"
-                    }
-                });
-                
-                if (result.status === 'FAILED') {
-                    deliveryStatus = 'FAILED';
-                    fcmError = result.error;
+        // 🔔 SEND PUSH NOTIFICATION (best-effort, notification is saved regardless)
+        try {
+            if (targetUserId) {
+                // Single user
+                if (targetUser && targetUser.fcmToken) {
+                    await sendPushNotification({
+                        token: targetUser.fcmToken,
+                        title,
+                        body: message,
+                        data: {
+                            notificationId: notification._id.toString(),
+                            type: type || "GENERAL"
+                        }
+                    });
                 }
             } else {
-                deliveryStatus = 'PENDING';
-            }
-        } else {
-            // Broadcast / User type
-            const users = await User.find({
-                fcmToken: { $ne: null },
-                ...(targetUserType && targetUserType !== "ALL"
-                    ? { userType: targetUserType }
-                    : {})
-            });
-
-            let failedCount = 0;
-            for (const u of users) {
-                const result = await sendPushNotification({
-                    token: u.fcmToken,
-                    title,
-                    body: message,
-                    data: {
-                        notificationId: notification._id.toString(),
-                        type: type || "GENERAL"
-                    }
+                // Broadcast / User type
+                const users = await User.find({
+                    fcmToken: { $ne: null },
+                    ...(targetUserType && targetUserType !== "ALL"
+                        ? { userType: targetUserType }
+                        : {})
                 });
-                
-                if (result.status === 'FAILED') {
-                    failedCount++;
+
+                for (const u of users) {
+                    await sendPushNotification({
+                        token: u.fcmToken,
+                        title,
+                        body: message,
+                        data: {
+                            notificationId: notification._id.toString(),
+                            type: type || "GENERAL"
+                        }
+                    });
                 }
             }
-
-            // If any FCM sends failed, mark as FAILED
-            if (failedCount > 0) {
-                deliveryStatus = 'FAILED';
-                fcmError = `Failed to deliver to ${failedCount} users`;
-            }
+        } catch (fcmErr) {
+            console.error("FCM push error (notification still saved):", fcmErr.message);
         }
 
-        // Update notification with delivery status
-        notification.deliveryStatus = deliveryStatus;
+        // Mark sent timestamp
         notification.sentAt = new Date();
-        if (fcmError) {
-            notification.fcmResponse = fcmError;
-        }
         await notification.save();
 
         res.status(201).json({

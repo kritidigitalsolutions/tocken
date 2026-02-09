@@ -9,7 +9,7 @@ const {
     togglePhonePrivacy,
     getPhonePrivacy,
     requestAccountDeletion,
-    cancelDeletionRequest,
+    // cancelDeletionRequest,
     getDeletionStatus,
     saveFcmToken,
     trackPropertyView,
@@ -36,7 +36,7 @@ router.patch("/phone-privacy", isAuth, togglePhonePrivacy);
 // ✅ Account Deletion APIs
 router.get("/deletion-status", isAuth, getDeletionStatus);
 router.post("/request-deletion", isAuth, requestAccountDeletion);
-router.delete("/cancel-deletion", isAuth, cancelDeletionRequest);
+// router.delete("/cancel-deletion", isAuth, cancelDeletionRequest);
 
 // ✅ FCM Token API
 router.post("/fcm-token", isAuth, saveFcmToken);

@@ -1,4 +1,6 @@
 const Notification = require("../models/notification.model");
+const User = require("../models/user.model");
+const mongoose = require("mongoose");
 
 /**
  * Get user's notifications
@@ -6,8 +8,13 @@ const Notification = require("../models/notification.model");
  */
 const getMyNotifications = async (req, res) => {
     try {
-        const userId = req.user._id;
-        const userType = req.user.userType;
+        // req.user.id comes from JWT (not _id)
+        const userId = new mongoose.Types.ObjectId(req.user.id);
+
+        // Fetch userType from DB since JWT doesn't include it
+        const user = await User.findById(userId).select('userType');
+        const userType = user?.userType || 'INDIVIDUAL';
+
         const { page = 1, limit = 20, unreadOnly = false } = req.query;
 
         // Find notifications that are:
@@ -103,8 +110,9 @@ const getMyNotifications = async (req, res) => {
  */
 const getUnreadCount = async (req, res) => {
     try {
-        const userId = req.user._id;
-        const userType = req.user.userType;
+        const userId = new mongoose.Types.ObjectId(req.user.id);
+        const user = await User.findById(userId).select('userType');
+        const userType = user?.userType || 'INDIVIDUAL';
 
         // Get all applicable notifications
         const query = {
@@ -157,7 +165,7 @@ const getUnreadCount = async (req, res) => {
  */
 const markAsRead = async (req, res) => {
     try {
-        const userId = req.user._id;
+        const userId = new mongoose.Types.ObjectId(req.user.id);
         const notificationId = req.params.id;
 
         const notification = await Notification.findById(notificationId);
@@ -215,8 +223,9 @@ const markAsRead = async (req, res) => {
  */
 const markAllAsRead = async (req, res) => {
     try {
-        const userId = req.user._id;
-        const userType = req.user.userType;
+        const userId = new mongoose.Types.ObjectId(req.user.id);
+        const user = await User.findById(userId).select('userType');
+        const userType = user?.userType || 'INDIVIDUAL';
 
         // Update single user notifications
         await Notification.updateMany(

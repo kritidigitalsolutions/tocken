@@ -2,8 +2,6 @@ import axios from "axios";
 
 const API = axios.create({
   baseURL: process.env.REACT_APP_API_URL
-  // baseURL: "https://backend-tocken-admin-panel.vercel.app/api",
-  // baseURL: "http://localhost:5000/api",
 });
 
 // 🔐 Attach token to every request

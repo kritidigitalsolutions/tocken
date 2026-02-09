@@ -284,13 +284,13 @@ const Users = () => {
     }
   };
 
-  // Handle delete property
+  // Handle delete property (permanent delete)
   const handleDeleteProperty = async () => {
-    if (!selectedProperty || !window.confirm("Are you sure you want to delete this property?")) return;
+    if (!selectedProperty || !window.confirm("⚠️ Are you sure you want to PERMANENTLY delete this property? This action cannot be undone and will remove all property data, images, and related leads.")) return;
     setActionLoading(true);
     try {
       await deleteProperty(selectedProperty._id);
-      toast.success("Property deleted");
+      toast.success("Property permanently deleted");
       
       setUserProperties(prev => prev.filter(p => p._id !== selectedProperty._id));
       closePropertyModal();
@@ -1609,7 +1609,7 @@ const Users = () => {
                     }`}
                   >
                     <Trash2 className="w-4 h-4" />
-                    Delete
+                    {actionLoading ? 'Deleting...' : 'Permanently Delete'}
                   </button>
                 </div>
               </div>

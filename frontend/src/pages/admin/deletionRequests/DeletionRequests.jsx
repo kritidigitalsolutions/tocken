@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
     fetchDeletionRequests,
     approveDeletionRequest,
-    rejectDeletionRequest,
     permanentlyDeleteUser
 } from "../../../api/deletionRequest.api";
 import Loader from "../../../components/common/Loader";
@@ -13,7 +12,7 @@ import {
     Phone,
     Clock,
     CheckCircle,
-    XCircle,
+    // XCircle,
     Trash2,
     AlertTriangle,
     MessageSquare,
@@ -24,7 +23,7 @@ import { useTheme } from "../../../context/ThemeContext";
 const DeletionRequests = () => {
     const { isDark } = useTheme();
     const [requests, setRequests] = useState([]);
-    const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, total: 0 });
+    const [stats, setStats] = useState({ pending: 0, approved: 0, total: 0 });
     const [loading, setLoading] = useState(true);
     const [selectedStatus, setSelectedStatus] = useState("PENDING");
     const [selectedRequest, setSelectedRequest] = useState(null);
@@ -62,17 +61,6 @@ const DeletionRequests = () => {
         }
     };
 
-    const handleReject = async (userId) => {
-        try {
-            await rejectDeletionRequest(userId);
-            toast.success("Deletion request rejected");
-            loadRequests();
-            setShowModal(false);
-            setShowConfirmModal(false);
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to reject");
-        }
-    };
 
     const handlePermanentDelete = async (userId) => {
         try {
@@ -140,15 +128,7 @@ const DeletionRequests = () => {
                         </div>
                     </div>
                 </div>
-                <div className={`rounded-lg p-4 border ${isDark ? 'bg-red-900/30 border-red-700' : 'bg-red-50 border-red-200'}`}>
-                    <div className="flex items-center gap-3">
-                        <XCircle className={isDark ? 'text-red-400' : 'text-red-600'} size={24} />
-                        <div>
-                            <p className={`text-2xl font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>{stats.rejected}</p>
-                            <p className={`text-sm ${isDark ? 'text-red-300' : 'text-red-700'}`}>Rejected</p>
-                        </div>
-                    </div>
-                </div>
+
                 <div className={`rounded-lg p-4 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200 shadow-sm'}`}>
                     <div className="flex items-center gap-3">
                         <UserX className={isDark ? 'text-slate-400' : 'text-gray-500'} size={24} />
@@ -162,15 +142,15 @@ const DeletionRequests = () => {
 
             {/* Filter Tabs */}
             <div className="flex gap-2 flex-wrap">
-                {["PENDING", "APPROVED", "REJECTED", "ALL"].map((status) => (
+                {["PENDING", "APPROVED", "ALL"].map((status) => (
                     <button
                         key={status}
                         onClick={() => setSelectedStatus(status)}
                         className={`px-4 py-2 rounded-lg font-medium transition ${selectedStatus === status
-                                ? "bg-indigo-600 text-white"
-                                : isDark
-                                    ? "bg-slate-800 text-slate-400 hover:bg-slate-700"
-                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            ? "bg-indigo-600 text-white"
+                            : isDark
+                                ? "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                             }`}
                     >
                         {status}
@@ -235,10 +215,10 @@ const DeletionRequests = () => {
                                     <td className="p-4">
                                         <span
                                             className={`px-3 py-1 rounded-full text-xs font-medium ${request.deletionRequest?.status === "PENDING"
-                                                    ? isDark ? "bg-yellow-900 text-yellow-300" : "bg-yellow-100 text-yellow-700"
-                                                    : request.deletionRequest?.status === "APPROVED"
-                                                        ? isDark ? "bg-green-900 text-green-300" : "bg-green-100 text-green-700"
-                                                        : isDark ? "bg-red-900 text-red-300" : "bg-red-100 text-red-700"
+                                                ? isDark ? "bg-yellow-900 text-yellow-300" : "bg-yellow-100 text-yellow-700"
+                                                : request.deletionRequest?.status === "APPROVED"
+                                                    ? isDark ? "bg-green-900 text-green-300" : "bg-green-100 text-green-700"
+                                                    : isDark ? "bg-red-900 text-red-300" : "bg-red-100 text-red-700"
                                                 }`}
                                         >
                                             {request.deletionRequest?.status || "N/A"}
@@ -336,10 +316,10 @@ const DeletionRequests = () => {
                             <div className="text-center">
                                 <span
                                     className={`px-4 py-2 rounded-full font-medium ${selectedRequest.deletionRequest?.status === "PENDING"
-                                            ? isDark ? "bg-yellow-900 text-yellow-300" : "bg-yellow-100 text-yellow-700"
-                                            : selectedRequest.deletionRequest?.status === "APPROVED"
-                                                ? isDark ? "bg-green-900 text-green-300" : "bg-green-100 text-green-700"
-                                                : isDark ? "bg-red-900 text-red-300" : "bg-red-100 text-red-700"
+                                        ? isDark ? "bg-yellow-900 text-yellow-300" : "bg-yellow-100 text-yellow-700"
+                                        : selectedRequest.deletionRequest?.status === "APPROVED"
+                                            ? isDark ? "bg-green-900 text-green-300" : "bg-green-100 text-green-700"
+                                            : isDark ? "bg-red-900 text-red-300" : "bg-red-100 text-red-700"
                                         }`}
                                 >
                                     {selectedRequest.deletionRequest?.status}
@@ -357,13 +337,7 @@ const DeletionRequests = () => {
                                     <CheckCircle size={18} />
                                     Approve
                                 </button>
-                                <button
-                                    onClick={() => openConfirmModal("reject")}
-                                    className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium flex items-center justify-center gap-2"
-                                >
-                                    <XCircle size={18} />
-                                    Reject
-                                </button>
+
                             </div>
                         )}
 
@@ -388,57 +362,44 @@ const DeletionRequests = () => {
                     <div className={`rounded-xl w-full max-w-md p-6 ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
                         <div className="text-center mb-6">
                             <div
-                                className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${confirmAction === "approve"
-                                        ? isDark ? "bg-green-900" : "bg-green-100"
-                                        : confirmAction === "reject"
-                                            ? isDark ? "bg-red-900" : "bg-red-100"
-                                            : isDark ? "bg-red-950" : "bg-red-200"
+                                className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${confirmAction === "approve" && isDark ? "bg-green-900" : "bg-green-100"
                                     }`}
                             >
-                                {confirmAction === "approve" && <CheckCircle size={32} className={isDark ? 'text-green-400' : 'text-green-600'} />}
-                                {confirmAction === "reject" && <XCircle size={32} className={isDark ? 'text-red-400' : 'text-red-600'} />}
-                                {confirmAction === "permanent" && <Trash2 size={32} className={isDark ? 'text-red-500' : 'text-red-700'} />}
-                            </div>
-                            <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                {confirmAction === "approve" && "Approve Deletion Request?"}
-                                {confirmAction === "reject" && "Reject Deletion Request?"}
-                                {confirmAction === "permanent" && "Permanently Delete User?"}
-                            </h3>
-                            <p className={isDark ? 'text-slate-400' : 'text-gray-500'}>
-                                {confirmAction === "approve" &&
-                                    "This will deactivate the user's account. They won't be able to log in."}
-                                {confirmAction === "reject" &&
-                                    "The user will be notified that their deletion request was rejected."}
-                                {confirmAction === "permanent" &&
-                                    "This action cannot be undone. All user data will be permanently deleted."}
-                            </p>
+                            {confirmAction === "approve" && <CheckCircle size={32} className={isDark ? 'text-green-400' : 'text-green-600'} />}
+                            {confirmAction === "permanent" && <Trash2 size={32} className={isDark ? 'text-red-500' : 'text-red-700'} />}
                         </div>
+                        <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {confirmAction === "approve" && "Approve Deletion Request?"}
+                            {confirmAction === "permanent" && "Permanently Delete User?"}
+                        </h3>
 
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setShowConfirmModal(false)}
-                                className={`flex-1 py-3 rounded-lg font-medium ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (confirmAction === "approve") handleApprove(selectedRequest._id);
-                                    if (confirmAction === "reject") handleReject(selectedRequest._id);
-                                    if (confirmAction === "permanent") handlePermanentDelete(selectedRequest._id);
-                                }}
-                                className={`flex-1 py-3 rounded-lg font-medium text-white ${confirmAction === "approve"
-                                        ? "bg-green-600 hover:bg-green-700"
-                                        : "bg-red-600 hover:bg-red-700"
-                                    }`}
-                            >
-                                Confirm
-                            </button>
-                        </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setShowConfirmModal(false)}
+                            className={`flex-1 py-3 rounded-lg font-medium ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={() => {
+                                if (confirmAction === "approve") handleApprove(selectedRequest._id);
+                                if (confirmAction === "permanent") handlePermanentDelete(selectedRequest._id);
+                            }}
+                            className={`flex-1 py-3 rounded-lg font-medium text-white ${confirmAction === "approve"
+                                ? "bg-green-600 hover:bg-green-700"
+                                : "bg-red-600 hover:bg-red-700"
+                                }`}
+                        >
+                            Confirm
+                        </button>
                     </div>
                 </div>
-            )}
-        </div>
+                </div>
+    )
+}
+        </div >
     );
 };
 

@@ -1,7 +1,7 @@
 const Admin = require("../../models/admin.model");
 const bcrypt = require("bcryptjs");
 const generateToken = require("../../utils/generateToken");
-const permissionsMap = require("../../utils/permissions");
+// const permissionsMap = require("../../utils/permissions");
 
 exports.adminLogin = async (req, res) => {
   try {

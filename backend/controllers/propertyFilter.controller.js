@@ -421,7 +421,7 @@ exports.filterProperties = async (req, res) => {
         }
 
         // ===== CO-LIVING FILTERS =====
-        if (listingType === "CO_LIVING") {
+        if (listingType === "CO_LIVING" || "co_living") {
             if (!isEmptyValue(lookingFor)) {
                 query["coLivingDetails.lookingFor"] = { $regex: `^${lookingFor}$`, $options: "i" };
             }
@@ -451,7 +451,7 @@ exports.filterProperties = async (req, res) => {
 
         // ===== PLOT/LAND FILTERS =====
         // FIXED: Plot/Land data is stored in commercialDetails (not plotDetails)
-        if (listingType === "PLOT_LAND" || (!isEmptyValue(propertyCategory) && (
+        if (listingType === "PLOT/LAND" || (!isEmptyValue(propertyCategory) && (
             (Array.isArray(propertyCategory) && propertyCategory.some(c => c && /plot|land/i.test(c))) ||
             (typeof propertyCategory === "string" && /plot|land/i.test(propertyCategory))
         ))) {

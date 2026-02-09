@@ -15,6 +15,7 @@ export const updateProperty = (id, data) =>
 export const updatePropertyStatus = (id, status) =>
   api.patch(`/admin/properties/${id}/status`, { status });
 
+// Permanent delete (for all pages)
 export const deleteProperty = (id) =>
   api.delete(`/admin/properties/${id}`);
 

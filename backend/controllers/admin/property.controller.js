@@ -2,6 +2,8 @@ const Property = require("../../models/property.model");
 const FilterProperty = require("../../models/filterProperty.model");
 const Lead = require("../../models/lead.model");
 const logAudit = require("../../utils/auditLogger");
+const { deleteFromFirebase } = require("../../utils/firebaseUpload");
+const mongoose = require("mongoose");
 
 
 exports.getAll = async (req, res) => {
@@ -167,7 +169,7 @@ exports.updateStatus = async (req, res) => {
 
     // Log audit
     await logAudit({
-      adminId: req.user._id || req.user.id,
+      adminId: new mongoose.Types.ObjectId(req.user.id),
       action: status === "ACTIVE" ? "PROPERTY_APPROVED" : status === "REJECTED" ? "PROPERTY_REJECTED" : "PROPERTY_CREATED",
       entityType: "PROPERTY",
       entityId: property._id,
@@ -189,110 +191,214 @@ exports.updateStatus = async (req, res) => {
   }
 };
 
-// 🔹 Admin: soft delete
-exports.softDeleteProperty = async (req, res) => {
-  const property = await Property.findByIdAndUpdate(
-    req.params.id,
-    {
-      isDeleted: true,
-      deletedAt: new Date(),
-      deletedBy: req.user._id || req.user.id
-    },
-    { new: true }
-  );
-
-  await logAudit({
-    adminId: req.user._id || req.user.id,
-    action: "PROPERTY_DELETED",
-    entityType: "PROPERTY",
-    entityId: property._id
-  });
-
-  res.json({ message: "Property soft deleted", property });
-};
-
 // 🔹 Admin: restore soft deleted property
 exports.restoreProperty = async (req, res) => {
-  const property = await Property.findByIdAndUpdate(
-    req.params.id,
-    {
-      isDeleted: false,
-      deletedAt: null,
-      deletedBy: null
-    },
-    { new: true }
-  );
+  try {
+    const property = await Property.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: false,
+        deletedAt: null,
+        deletedBy: null
+      },
+      { new: true }
+    );
 
-  await logAudit({
-    adminId: req.user._id || req.user.id,
-    action: "PROPERTY_RESTORED",
-    entityType: "PROPERTY",
-    entityId: property._id
-  });
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        message: "Property not found"
+      });
+    }
 
-  res.json({ message: "Property restored", property });
+    await logAudit({
+      adminId: new mongoose.Types.ObjectId(req.user.id),
+      action: "PROPERTY_RESTORED",
+      entityType: "PROPERTY",
+      entityId: property._id
+    });
+
+    res.json({ 
+      success: true,
+      message: "Property restored", 
+      property 
+    });
+  } catch (error) {
+    console.error("ERROR RESTORING PROPERTY:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to restore property",
+      error: error.message
+    });
+  }
+};
+
+// 🔹 Admin: permanent delete property
+exports.permanentDeleteProperty = async (req, res) => {
+  try {
+    const propertyId = req.params.id;
+    
+    // First, get the property to access image URLs
+    const property = await Property.findById(propertyId);
+    
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        message: "Property not found"
+      });
+    }
+
+    // Delete images from Firebase Storage
+    if (property.images && property.images.length > 0) {
+      console.log(`🗑️ Deleting ${property.images.length} images from Firebase storage...`);
+      
+      for (const imageUrl of property.images) {
+        try {
+          await deleteFromFirebase(imageUrl);
+        } catch (error) {
+          console.warn(`⚠️ Failed to delete image: ${imageUrl}`, error.message);
+        }
+      }
+    }
+
+    // Delete related leads (optional - uncomment if needed)
+    const deletedLeads = await Lead.deleteMany({ listingId: propertyId });
+    console.log(`🗑️ Deleted ${deletedLeads.deletedCount} related leads`);
+
+    // Delete from FilterProperty collection
+    const deletedFilterProperties = await FilterProperty.deleteMany({ originalPropertyId: propertyId });
+    console.log(`🗑️ Deleted ${deletedFilterProperties.deletedCount} filter property records`);
+
+    // Delete the property record permanently
+    await Property.findByIdAndDelete(propertyId);
+
+    // Log the audit action
+    await logAudit({
+      adminId: new mongoose.Types.ObjectId(req.user.id),
+      action: "PROPERTY_PERMANENT_DELETE",
+      entityType: "PROPERTY",
+      entityId: propertyId,
+      meta: { 
+        deletedLeads: deletedLeads.deletedCount,
+        title: property.title || 'Unknown',
+        location: property.location?.displayName || 'Unknown'
+      }
+    });
+
+    res.json({ 
+      success: true,
+      message: "Property permanently deleted",
+      data: {
+        propertyId,
+        deletedLeads: deletedLeads.deletedCount,
+        deletedImages: property.images?.length || 0,
+        deletedFilterProperties: deletedFilterProperties.deletedCount
+      }
+    });
+    
+  } catch (error) {
+    console.error("ERROR PERMANENT DELETE:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to permanently delete property",
+      error: error.message
+    });
+  }
 };
 
 // 🔹 Admin: mark property as premium
 exports.makePremium = async (req, res) => {
-  const { planName, durationInDays, boostRank } = req.body;
+  try {
+    const { planName, durationInDays, boostRank } = req.body;
 
-  const startDate = new Date();
-  const endDate = new Date();
-  endDate.setDate(startDate.getDate() + durationInDays);
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + durationInDays);
 
-  const property = await Property.findByIdAndUpdate(
-    req.params.id,
-    {
-      isPremium: true,
-      premium: {
-        startDate,
-        endDate,
-        planName,
-        boostRank
-      }
-    },
-    { new: true }
-  );
+    const property = await Property.findByIdAndUpdate(
+      req.params.id,
+      {
+        isPremium: true,
+        premium: {
+          startDate,
+          endDate,
+          planName,
+          boostRank
+        }
+      },
+      { new: true }
+    );
 
-  await logAudit({
-    adminId: req.user._id || req.user.id,
-    action: "PROPERTY_APPROVED",
-    entityType: "PROPERTY",
-    entityId: property._id,
-    meta: { planName }
-  });
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        message: "Property not found"
+      });
+    }
 
-  res.json({
-    message: "Property marked as premium",
-    property
-  });
+    await logAudit({
+      adminId: new mongoose.Types.ObjectId(req.user.id),
+      action: "PROPERTY_APPROVED",
+      entityType: "PROPERTY",
+      entityId: property._id,
+      meta: { planName }
+    });
+
+    res.json({
+      success: true,
+      message: "Property marked as premium",
+      property
+    });
+  } catch (error) {
+    console.error("ERROR MAKING PREMIUM:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to mark property as premium",
+      error: error.message
+    });
+  }
 };
-
 
 // 🔹 Admin: remove premium status
 exports.removePremium = async (req, res) => {
-  const property = await Property.findByIdAndUpdate(
-    req.params.id,
-    {
-      isPremium: false,
-      premium: {}
-    },
-    { new: true }
-  );
+  try {
+    const property = await Property.findByIdAndUpdate(
+      req.params.id,
+      {
+        isPremium: false,
+        premium: {}
+      },
+      { new: true }
+    );
 
-  await logAudit({
-    adminId: req.user._id || req.user.id,
-    action: "PROPERTY_APPROVED",
-    entityType: "PROPERTY",
-    entityId: property._id,
-    meta: { reason: "Premium removed" }
-  });
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        message: "Property not found"
+      });
+    }
 
-  res.json({
-    message: "Premium removed",
-    property
-  });
+    await logAudit({
+      adminId: new mongoose.Types.ObjectId(req.user.id),
+      action: "PROPERTY_APPROVED",
+      entityType: "PROPERTY",
+      entityId: property._id,
+      meta: { reason: "Premium removed" }
+    });
+
+    res.json({
+      success: true,
+      message: "Premium removed",
+      property
+    });
+  } catch (error) {
+    console.error("ERROR REMOVING PREMIUM:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to remove premium",
+      error: error.message
+    });
+  }
 };
 
 // 🔹 Admin: Get all properties of a specific user
@@ -400,7 +506,7 @@ exports.updateProperty = async (req, res) => {
 
     // Log audit
     await logAudit({
-      adminId: req.user._id || req.user.id,
+      adminId: new mongoose.Types.ObjectId(req.user.id),
       action: "PROPERTY_APPROVED",
       entityType: "PROPERTY",
       entityId: property._id,

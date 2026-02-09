@@ -16,6 +16,7 @@ const auditLogSchema = new mongoose.Schema(
         "PROPERTY_REJECTED",
         "PROPERTY_BLOCKED",
         "PROPERTY_DELETED",
+        "PROPERTY_PERMANENT_DELETE",
         "PROPERTY_RESTORED",
         "PHOTO_DELETED",
         "LEAD_STATUS_UPDATED"

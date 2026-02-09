@@ -221,8 +221,8 @@ exports.updateProfile = async (req, res) => {
     const updateData = {
       firstName,
       lastName,
-      gstNumber
-      // name: `${firstName} ${lastName}`,
+      gstNumber,
+      name: `${firstName} ${lastName}`,
     };
 
     // Handle profile image upload to Firebase
@@ -419,46 +419,46 @@ exports.requestAccountDeletion = async (req, res) => {
  * 
  * User cancels their deletion request
  */
-exports.cancelDeletionRequest = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
+// exports.cancelDeletionRequest = async (req, res) => {
+//   try {
+//     const user = await User.findById(req.user.id);
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
+//     if (!user) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "User not found"
+//       });
+//     }
 
-    if (user.deletionRequest?.status !== "PENDING") {
-      return res.status(400).json({
-        success: false,
-        message: "No pending deletion request to cancel"
-      });
-    }
+//     if (user.deletionRequest?.status !== "PENDING") {
+//       return res.status(400).json({
+//         success: false,
+//         message: "No pending deletion request to cancel"
+//       });
+//     }
 
-    user.deletionRequest = {
-      status: "NONE",
-      reason: null,
-      feedback: null,
-      requestedAt: null
-    };
+//     user.deletionRequest = {
+//       status: "NONE",
+//       reason: null,
+//       feedback: null,
+//       requestedAt: null
+//     };
 
-    await user.save();
+//     await user.save();
 
-    res.status(200).json({
-      success: true,
-      message: "Deletion request cancelled successfully"
-    });
+//     res.status(200).json({
+//       success: true,
+//       message: "Deletion request cancelled successfully"
+//     });
 
-  } catch (error) {
-    console.error("Cancel deletion error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error"
-    });
-  }
-};
+//   } catch (error) {
+//     console.error("Cancel deletion error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error"
+//     });
+//   }
+// };
 
 /**
  * GET DELETION REQUEST STATUS

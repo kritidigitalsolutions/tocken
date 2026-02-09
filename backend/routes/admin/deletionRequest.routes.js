@@ -4,7 +4,7 @@ const router = express.Router();
 const {
     getDeletionRequests,
     approveDeletion,
-    rejectDeletion,
+    // rejectDeletion,
     permanentlyDeleteUser
 } = require("../../controllers/admin/deletionRequest.controller");
 
@@ -15,7 +15,7 @@ router.get("/", getDeletionRequests);
 router.post("/:userId/approve", approveDeletion);
 
 // Reject deletion request
-router.post("/:userId/reject", rejectDeletion);
+// router.post("/:userId/reject", rejectDeletion);
 
 // Permanently delete user (hard delete)
 router.delete("/:userId/permanent", permanentlyDeleteUser);

@@ -19,8 +19,15 @@ router.put("/:id", adminAuth, controller.updateProperty);
 // Change status
 router.patch("/:id/status", adminAuth, controller.updateStatus);
 
-// Soft delete
-router.delete("/:id", adminAuth, controller.softDeleteProperty);
+// Permanent delete (for all pages - no soft delete)
+router.delete(
+  "/:id", 
+  adminAuth, 
+  permit("PROPERTY_DELETE"), 
+  controller.permanentDeleteProperty
+);
+
+// Restore soft deleted property
 router.patch("/:id/restore", adminAuth, controller.restoreProperty);
 
 // Make premium / remove premium
@@ -33,15 +40,6 @@ router.patch(
   adminAuth,
   permit("PREMIUM_GRANT"),
   controller.makePremium
-);
-
-
-// delete for soft delete with permission check
-router.delete(
-  "/:id",
-  adminAuth,
-  permit("PROPERTY_DELETE"),
-  controller.softDeleteProperty
 );
 
 module.exports = router;

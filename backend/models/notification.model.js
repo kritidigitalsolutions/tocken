@@ -15,7 +15,7 @@ const notificationSchema = new mongoose.Schema(
 
         type: {
             type: String,
-            enum: ["GENERAL", "PROPERTY", "LEAD", "PLAN", "SYSTEM", "PROMOTIONAL"],
+            // enum: ["GENERAL", "PROPERTY", "LEAD", "PLAN", "SYSTEM", "PROMOTIONAL"],
             default: "GENERAL"
         },
 
@@ -29,7 +29,7 @@ const notificationSchema = new mongoose.Schema(
         // Target specific user types (if targetUser is null)
         targetUserType: {
             type: String,
-            enum: ["ALL", "AGENT", "BUILDER", "INDIVIDUAL"],
+            // enum: ["ALL", "AGENT", "BUILDER", "INDIVIDUAL"],
             default: "ALL"
         },
 
@@ -85,22 +85,9 @@ const notificationSchema = new mongoose.Schema(
             default: true
         },
 
-        // FCM Delivery Status
-        deliveryStatus: {
-            type: String,
-            enum: ['PENDING', 'SENT', 'FAILED'],
-            default: 'PENDING'
-        },
-
         // Timestamp when notification was sent
         sentAt: {
             type: Date,
-            default: null
-        },
-
-        // FCM error response (if failed)
-        fcmResponse: {
-            type: String,
             default: null
         }
     },

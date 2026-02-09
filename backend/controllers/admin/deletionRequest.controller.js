@@ -122,51 +122,51 @@ exports.approveDeletion = async (req, res) => {
  * REJECT DELETION REQUEST
  * POST /api/admin/deletion-requests/:userId/reject
  */
-exports.rejectDeletion = async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const { adminNote } = req.body;
+// exports.rejectDeletion = async (req, res) => {
+//     try {
+//         const { userId } = req.params;
+//         const { adminNote } = req.body;
 
-        const user = await User.findById(userId);
+//         const user = await User.findById(userId);
 
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
-        }
+//         if (!user) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "User not found"
+//             });
+//         }
 
-        if (user.deletionRequest?.status !== "PENDING") {
-            return res.status(400).json({
-                success: false,
-                message: "No pending deletion request for this user"
-            });
-        }
+//         if (user.deletionRequest?.status !== "PENDING") {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "No pending deletion request for this user"
+//             });
+//         }
 
-        user.deletionRequest.status = "REJECTED";
-        user.deletionRequest.processedAt = new Date();
-        user.deletionRequest.processedBy = req.user.id;
+//         user.deletionRequest.status = "REJECTED";
+//         user.deletionRequest.processedAt = new Date();
+//         user.deletionRequest.processedBy = req.user.id;
 
-        await user.save();
+//         await user.save();
 
-        res.status(200).json({
-            success: true,
-            message: "Deletion request rejected",
-            user: {
-                name: user.name,
-                phone: user.phone
-            }
-        });
+//         res.status(200).json({
+//             success: true,
+//             message: "Deletion request rejected",
+//             user: {
+//                 name: user.name,
+//                 phone: user.phone
+//             }
+//         });
 
-    } catch (error) {
-        console.error("Reject deletion error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Failed to reject deletion",
-            error: error.message
-        });
-    }
-};
+//     } catch (error) {
+//         console.error("Reject deletion error:", error);
+//         res.status(500).json({
+//             success: false,
+//             message: "Failed to reject deletion",
+//             error: error.message
+//         });
+//     }
+// };
 
 /**
  * PERMANENTLY DELETE USER (Hard delete)

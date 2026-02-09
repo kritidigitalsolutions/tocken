@@ -14,9 +14,9 @@ export const fetchDeletionRequests = (params = {}) => {
 export const approveDeletionRequest = (userId) =>
     api.post(`/admin/deletion-requests/${userId}/approve`);
 
-// Reject deletion request
-export const rejectDeletionRequest = (userId, adminNote = "") =>
-    api.post(`/admin/deletion-requests/${userId}/reject`, { adminNote });
+// // Reject deletion request
+// export const rejectDeletionRequest = (userId, adminNote = "") =>
+//     api.post(`/admin/deletion-requests/${userId}/reject`, { adminNote });
 
 // Permanently delete user
 export const permanentlyDeleteUser = (userId) =>
