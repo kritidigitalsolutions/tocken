@@ -653,6 +653,11 @@ const Users = () => {
                             {user.phone || "No phone"}
                           </span>
                         </div>
+                        <div className="mb-1">
+                          <span className={`text-xs font-mono ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                            ID: {user._id}
+                          </span>
+                        </div>
 
                         <div className="flex items-center justify-between">
                           <span className={`text-xs px-2 py-0.5 rounded-full ${colors.bg} ${colors.text}`}>
@@ -815,6 +820,17 @@ const Users = () => {
                       </div>
                     </div>
                   </div>
+                </div>
+
+                {/* User ID Display */}
+                <div className={`rounded-xl p-4 mb-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Key className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} />
+                    <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>User ID</span>
+                  </div>
+                  <p className={`text-sm font-mono font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                    {selectedUser._id}
+                  </p>
                 </div>
 
                 {/* Quick Info Grid */}

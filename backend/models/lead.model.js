@@ -15,6 +15,12 @@ const leadSchema = new mongoose.Schema(
       required: true
     },
 
+    buyerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null // Optional: only if buyer is logged in
+    },
+
     // 🔹 Lead info
     buyerName: {
       type: String,
@@ -28,7 +34,7 @@ const leadSchema = new mongoose.Schema(
 
     source: {
       type: String,
-      enum: ["CALL", "WHATSAPP", "FORM"],
+      enum: ["CALL", "WHATSAPP", "FORM", "ADMIN_ASSIGNED"],
       default: "FORM"
     },
 

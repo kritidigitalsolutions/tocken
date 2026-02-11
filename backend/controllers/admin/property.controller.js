@@ -108,9 +108,16 @@ exports.updateStatus = async (req, res) => {
     }
 
     // Update status in main Property collection
+    const updateData = { status };
+    
+    // Set activatedAt when property is activated
+    if (status === "ACTIVE") {
+      updateData.activatedAt = new Date();
+    }
+
     const property = await Property.findByIdAndUpdate(
       propertyId,
-      { status },
+      updateData,
       { new: true }
     ).populate("userId", "name phone email");
 

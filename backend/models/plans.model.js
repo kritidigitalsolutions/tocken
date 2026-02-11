@@ -5,6 +5,8 @@ const planSchema = new mongoose.Schema({
     type: String,
     enum: [
       "AGENT",
+      "BUILDER",        // ✅ New: For real estate developers
+      "INDIVIDUAL",     // ✅ New: For personal property owners
       "SELLER",
       "LANDLORD",
       "PG OWNER",
@@ -34,6 +36,12 @@ const planSchema = new mongoose.Schema({
   },
 
   validityDays: Number,
+
+  // Lead Quota (for Agents/Owners)
+  leadsPerMonth: {
+    type: Number,
+    default: 0 // 0 = unlimited for premium plans, 5 for free, 50 for basic
+  },
 
   features: [String],
 

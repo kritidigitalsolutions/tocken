@@ -1,5 +1,6 @@
 const User = require("../models/user.model");
 const jwt = require("jsonwebtoken");
+const Property = require("../models/property.model");
 const { uploadToFirebase, deleteFromFirebase } = require("../utils/firebaseUpload");
 
 /**
@@ -491,53 +492,53 @@ exports.getDeletionStatus = async (req, res) => {
 
 
 exports.saveFcmToken = async (req, res) => {
-    try {
-        const { fcmToken } = req.body;
+  try {
+    const { fcmToken } = req.body;
 
-        if (!fcmToken) {
-            return res.status(400).json({
-                success: false,
-                message: "FCM token is required"
-            });
-        }
-
-        // Validate FCM token format
-        if (typeof fcmToken !== 'string' || fcmToken.length < 50) {
-            console.warn("⚠️  Invalid FCM token format received:", fcmToken?.substring(0, 30));
-            return res.status(400).json({
-                success: false,
-                message: "Invalid FCM token format. Token should be a long string from Firebase."
-            });
-        }
-
-        console.log("📝 Saving FCM token for user:", req.user.id, "Token:", fcmToken.substring(0, 30) + "...");
-
-        const user = await User.findByIdAndUpdate(
-            req.user.id,
-            { fcmToken },
-            { new: true }
-        );
-
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: "FCM token saved successfully",
-            tokenPreview: fcmToken.substring(0, 30) + "..."
-        });
-    } catch (error) {
-        console.error("Save FCM token error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Failed to save FCM token",
-            error: error.message
-        });
+    if (!fcmToken) {
+      return res.status(400).json({
+        success: false,
+        message: "FCM token is required"
+      });
     }
+
+    // Validate FCM token format
+    if (typeof fcmToken !== 'string' || fcmToken.length < 50) {
+      console.warn("⚠️  Invalid FCM token format received:", fcmToken?.substring(0, 30));
+      return res.status(400).json({
+        success: false,
+        message: "Invalid FCM token format. Token should be a long string from Firebase."
+      });
+    }
+
+    console.log("📝 Saving FCM token for user:", req.user.id, "Token:", fcmToken.substring(0, 30) + "...");
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { fcmToken },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "FCM token saved successfully",
+      tokenPreview: fcmToken.substring(0, 30) + "..."
+    });
+  } catch (error) {
+    console.error("Save FCM token error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to save FCM token",
+      error: error.message
+    });
+  }
 };
 
 /**
@@ -546,154 +547,463 @@ exports.saveFcmToken = async (req, res) => {
  * Body: { propertyId }
  */
 exports.trackPropertyView = async (req, res) => {
-    try {
-        const { propertyId } = req.body;
-        const userId = req.user.id;
+  try {
+    const { propertyId } = req.body;
+    const userId = req.user.id;
 
-        if (!propertyId) {
-            return res.status(400).json({
-                success: false,
-                message: "Property ID is required"
-            });
-        }
-
-        // Verify property exists
-        const Property = require("../models/property.model");
-        const property = await Property.findById(propertyId);
-        if (!property) {
-            return res.status(404).json({
-                success: false,
-                message: "Property not found"
-            });
-        }
-
-        // Get user
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
-        }
-
-        // Check if property already in mostVisitedProperties
-        const existingView = user.mostVisitedProperties.find(
-            (v) => v.property.toString() === propertyId
-        );
-
-        if (existingView) {
-            // Increment view count
-            existingView.viewCount += 1;
-            existingView.lastViewedAt = new Date();
-        } else {
-            // Add new viewed property
-            user.mostVisitedProperties.push({
-                property: propertyId,
-                viewCount: 1,
-                lastViewedAt: new Date()
-            });
-        }
-
-        await user.save();
-
-        res.status(200).json({
-            success: true,
-            message: "Property view tracked successfully",
-            viewCount: existingView ? existingView.viewCount : 1
-        });
-    } catch (error) {
-        console.error("Track property view error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Failed to track property view",
-            error: error.message
-        });
+    if (!propertyId) {
+      return res.status(400).json({
+        success: false,
+        message: "Property ID is required"
+      });
     }
+
+    // Verify property exists
+    const property = await Property.findById(propertyId);
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        message: "Property not found"
+      });
+    }
+
+    // Get MostVisited model
+    const MostVisited = require("../models/mostVisited.model");
+
+    // Find or create MostVisited entry for this property
+    let visitRecord = await MostVisited.findOne({ propertyId });
+
+    if (visitRecord) {
+      // Check if user already viewed this property
+      const existingViewer = visitRecord.recentViewers?.find(
+        (viewer) => viewer.userId?.toString() === userId
+      );
+
+      if (existingViewer) {
+        // Update existing viewer's timestamp
+        existingViewer.viewedAt = new Date();
+      } else {
+        // Add new viewer
+        if (!visitRecord.recentViewers) {
+          visitRecord.recentViewers = [];
+        }
+        visitRecord.recentViewers.push({
+          userId,
+          viewedAt: new Date()
+        });
+        visitRecord.uniqueViewers = (visitRecord.uniqueViewers || 0) + 1;
+      }
+
+      // Increment total views
+      visitRecord.totalViews = (visitRecord.totalViews || 0) + 1;
+      visitRecord.lastViewedAt = new Date();
+
+      // Keep only last 50 viewers
+      if (visitRecord.recentViewers.length > 50) {
+        visitRecord.recentViewers = visitRecord.recentViewers.slice(-50);
+      }
+
+      await visitRecord.save();
+    } else {
+      // Create new visit record
+      visitRecord = await MostVisited.create({
+        propertyId,
+        totalViews: 1,
+        uniqueViewers: 1,
+        lastViewedAt: new Date(),
+        recentViewers: [{
+          userId,
+          viewedAt: new Date()
+        }]
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Property view tracked successfully",
+      totalViews: visitRecord.totalViews,
+      uniqueViewers: visitRecord.uniqueViewers
+    });
+
+  } catch (error) {
+    console.error("Track property view error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to track property view",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * DEBUG MOST VISITED (for debugging MostVisited collection)
+ * GET /api/user/debug-most-visited
+ */
+exports.debugMostVisited = async (req, res) => {
+  try {
+    const MostVisited = require("../models/mostVisited.model");
+
+    const allEntries = await MostVisited.find()
+      .populate({
+        path: "propertyId",
+        populate: {
+          path: "userId",
+          select: "name phone email"
+        }
+      })
+      .populate({
+        path: "recentViewers.userId",
+        select: "name phone email"
+      })
+      .sort({ totalViews: -1 })
+      .lean();
+
+    const debugData = allEntries.map(entry => ({
+      _id: entry._id,
+      propertyId: entry.propertyId?._id,
+      propertyTitle: entry.propertyId?.title,
+      propertyStatus: entry.propertyId?.status,
+      propertyDeleted: entry.propertyId?.isDeleted,
+      totalViews: entry.totalViews,
+      uniqueViewers: entry.uniqueViewers,
+      lastViewedAt: entry.lastViewedAt,
+      recentViewers: entry.recentViewers?.map(viewer => ({
+        userId: viewer.userId?._id,
+        userName: viewer.userId?.name,
+        viewedAt: viewer.viewedAt
+      }))
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: "Debug data for MostVisited collection",
+      totalEntries: allEntries.length,
+      data: debugData
+    });
+  } catch (error) {
+    console.error("Debug most visited error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch debug data",
+      error: error.message
+    });
+  }
 };
 
 /**
  * GET MOST VISITED PROPERTIES
- * GET /api/user/most-visited-properties?limit=10&sortBy=viewCount
+ * GET /api/user/most-visited-properties?limit=20&minViews=2
+ * 
+ * Returns properties with highest view counts with complete data
  */
 exports.getMostVisitedProperties = async (req, res) => {
-    try {
-        const { limit = 10, sortBy = "viewCount" } = req.query;
-        const userId = req.user.id;
+  try {
+    const { limit = 20, minViews = 2 } = req.query;
+    const maxLimit = 20;
 
-        const user = await User.findById(userId).populate({
-            path: "mostVisitedProperties.property",
-            select: "title price location images lifeCycleStage propertyType propertySubType description"
-        });
+    const MostVisited = require("../models/mostVisited.model");
 
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
+    // Get most visited properties with minimum view threshold
+    const mostVisited = await MostVisited.find({
+      totalViews: { $gte: parseInt(minViews) }
+    })
+      .populate({
+        path: "propertyId",
+        match: {
+          status: "ACTIVE",
+          isDeleted: false
+        },
+        populate: {
+          path: "userId",
+          select: "name phone profileImage email"
         }
+      })
+      .sort({ totalViews: -1, lastViewedAt: -1 })
+      .limit(Math.min(parseInt(limit), maxLimit))
+      .lean();
 
-        // Sort by viewCount or lastViewedAt
-        let sortedProperties = [...user.mostVisitedProperties];
-        
-        if (sortBy === "viewCount") {
-            sortedProperties.sort((a, b) => b.viewCount - a.viewCount);
-        } else if (sortBy === "recent") {
-            sortedProperties.sort((a, b) => new Date(b.lastViewedAt) - new Date(a.lastViewedAt));
-        }
+    console.log("🔍 Raw MostVisited entries found:", mostVisited.length);
 
-        // Apply limit
-        sortedProperties = sortedProperties.slice(0, parseInt(limit));
+    // Filter valid admin-approved properties and return complete property data
+    const validProperties = mostVisited
+      .filter(item => item.propertyId) // Only properties that are approved
+      .map(item => {
+        const property = item.propertyId;
 
-        res.status(200).json({
-            success: true,
-            count: sortedProperties.length,
-            properties: sortedProperties.map(v => ({
-                ...v.property.toObject(),
-                viewCount: v.viewCount,
-                lastViewedAt: v.lastViewedAt
-            }))
-        });
-    } catch (error) {
-        console.error("Get most visited properties error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch most visited properties",
-            error: error.message
-        });
-    }
+        // Return complete property object with visit stats
+        return {
+          ...property, // Spread all property fields
+          _visitStats: {
+            totalViews: item.totalViews,
+            uniqueViewers: item.uniqueViewers,
+            lastViewedAt: item.lastViewedAt
+          }
+        };
+      });
+
+    console.log("✅ Valid active properties:", validProperties.length);
+
+    res.status(200).json({
+      success: true,
+      count: validProperties.length,
+      message: `Top ${validProperties.length} most visited properties (minimum ${minViews} views)`,
+      data: validProperties
+    });
+  } catch (error) {
+    console.error("❌ Get most visited properties error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch most visited properties",
+      error: error.message
+    });
+  }
 };
 
 /**
- * CLEAR MOST VISITED PROPERTIES
- * DELETE /api/user/most-visited-properties
+ * GET RECENTLY ADDED PROPERTIES (Simple API)
+ * GET /api/user/recently-added-properties?limit=10
+ * 
+ * Returns properties recently activated by admin with complete data
+ * Simple API without complex filters
  */
-exports.clearMostVisitedProperties = async (req, res) => {
-    try {
-        const userId = req.user.id;
+exports.getRecentlyAddedProperties = async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
 
-        const user = await User.findByIdAndUpdate(
-            userId,
-            { mostVisitedProperties: [] },
-            { new: true }
-        );
+    console.log("🔍 Fetching recently added properties, limit:", limit);
 
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
+    // Query - get all active properties with complete data
+    const properties = await Property.find({
+      status: "ACTIVE",
+      isDeleted: false
+    })
+      .populate("userId", "name firstName lastName phone email userType profileImage")
+      .sort({ createdAt: -1 }) // Newest first
+      .limit(parseInt(limit))
+      .lean(); // Convert to plain JavaScript objects
+
+    console.log("📊 Found properties:", properties.length);
+
+    res.status(200).json({
+      success: true,
+      count: properties.length,
+      message: `Found ${properties.length} recently added properties`,
+      data: properties // Return complete property objects
+    });
+
+  } catch (error) {
+    console.error("❌ Get recently added properties error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch recently added properties",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * GET MOST LIKED PROPERTIES (Global Bookmarks Analysis)
+ * GET /api/user/most-liked-properties?limit=10
+ * 
+ * Returns properties with highest bookmark counts globally with complete data
+ */
+exports.getMostLikedProperties = async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+
+    console.log("🔍 Analyzing global bookmark data for most liked properties...");
+
+    // Get all users with bookmarks 
+    const users = await User.find({
+      bookmarks: { $exists: true, $ne: [] }
+    })
+      .select("bookmarks")
+      .lean();
+
+    console.log("📊 Found users with bookmarks:", users.length);
+
+    // Count bookmarks for each property
+    const bookmarkCounts = {};
+
+    for (const user of users) {
+      if (user.bookmarks && user.bookmarks.length > 0) {
+        for (const propertyId of user.bookmarks) {
+          const propId = propertyId.toString();
+          bookmarkCounts[propId] = (bookmarkCounts[propId] || 0) + 1;
         }
-
-        res.status(200).json({
-            success: true,
-            message: "Most visited properties cleared successfully"
-        });
-    } catch (error) {
-        console.error("Clear most visited properties error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Failed to clear most visited properties",
-            error: error.message
-        });
+      }
     }
+
+    console.log("🏆 Properties with bookmarks:", Object.keys(bookmarkCounts).length);
+
+    // Sort by bookmark count and get top properties
+    const sortedProperties = Object.entries(bookmarkCounts)
+      .sort(([, countA], [, countB]) => countB - countA) // Descending order
+      .slice(0, parseInt(limit))
+      .map(([propertyId, count]) => ({ propertyId, bookmarkCount: count }));
+
+    console.log("📈 Top bookmarked properties:", sortedProperties);
+
+    // Get complete property details  
+    const propertyIds = sortedProperties.map(p => p.propertyId);
+
+    const properties = await Property.find({
+      _id: { $in: propertyIds },
+      status: "ACTIVE",
+      isDeleted: false
+    })
+      .populate("userId", "name firstName lastName phone email userType profileImage")
+      .lean();
+
+    console.log("✅ Found active properties:", properties.length);
+
+    // Add bookmark count to each property and sort by bookmark count
+    const propertiesWithBookmarks = properties
+      .map(property => {
+        const bookmarkInfo = sortedProperties.find(p => p.propertyId === property._id.toString());
+        return {
+          ...property, // Spread all property fields
+          _bookmarkStats: {
+            totalBookmarks: bookmarkInfo?.bookmarkCount || 0,
+            bookmarkRank: sortedProperties.findIndex(p => p.propertyId === property._id.toString()) + 1
+          }
+        };
+      })
+      .sort((a, b) => b._bookmarkStats.totalBookmarks - a._bookmarkStats.totalBookmarks);
+
+    console.log("🎯 Properties with bookmark counts:", propertiesWithBookmarks.length);
+
+    res.status(200).json({
+      success: true,
+      count: propertiesWithBookmarks.length,
+      message: `Found ${propertiesWithBookmarks.length} most liked properties`,
+      data: propertiesWithBookmarks // Return complete property objects with bookmark stats
+    });
+
+  } catch (error) {
+    console.error("❌ Get most liked properties error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch most liked properties",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * GET MOST POPULAR CITIES
+ * GET /api/user/most-popular-cities?limit=5&propertiesPerCity=10
+ * 
+ * Returns properties from cities with highest property counts
+ * Cities with most properties are considered "popular"
+ */
+exports.getMostPopularCities = async (req, res) => {
+  try {
+    const {
+      limit = 5,              // Number of top cities to return
+      propertiesPerCity = 10  // Properties per city
+    } = req.query;
+
+    console.log("🏙️ Analyzing most popular cities by property count...");
+
+    // Aggregate properties by city to find most popular cities
+    const cityCounts = await Property.aggregate([
+      {
+        $match: {
+          status: "ACTIVE",
+          isDeleted: false,
+          "location.city": { $exists: true, $ne: null, $ne: "" }
+        }
+      },
+      {
+        $group: {
+          _id: "$location.city",
+          propertyCount: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { propertyCount: -1 }
+      },
+      {
+        $limit: parseInt(limit)
+      }
+    ]);
+
+    console.log("📊 Top cities by property count:", cityCounts);
+
+    if (cityCounts.length === 0) {
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        message: "No cities found with properties",
+        data: []
+      });
+    }
+
+    // Get top city names
+    const topCityNames = cityCounts.map(city => city._id);
+
+    // Get properties from these top cities
+    const properties = await Property.find({
+      status: "ACTIVE",
+      isDeleted: false,
+      "location.city": { $in: topCityNames }
+    })
+      .populate("userId", "name firstName lastName phone email userType profileImage")
+      .sort({ isPremium: -1, createdAt: -1 }) // Premium first, then newest
+      .lean();
+
+    console.log("✅ Total properties from top cities:", properties.length);
+
+    // Group properties by city and limit per city
+    const propertiesByCity = {};
+
+    topCityNames.forEach(city => {
+      propertiesByCity[city] = [];
+    });
+
+    // Distribute properties to respective cities (with limit per city)
+    properties.forEach(property => {
+      const city = property.location?.city;
+      if (city && propertiesByCity[city] && propertiesByCity[city].length < parseInt(propertiesPerCity)) {
+        propertiesByCity[city].push(property);
+      }
+    });
+
+    // Format response with city statistics
+    // const cityData = topCityNames.map(cityName => {
+    //   const cityInfo = cityCounts.find(c => c._id === cityName);
+    //   return {
+    //     cityName: cityName,
+    //     totalProperties: cityInfo?.propertyCount || 0,
+    //     propertiesShown: propertiesByCity[cityName]?.length || 0,
+    //     properties: propertiesByCity[cityName] || []
+    //   };
+    // });
+
+    // Flatten all properties for main data array
+    // const allProperties = Object.values(propertiesByCity).flat();
+
+    // console.log("🎯 Total properties to return:", allProperties.length);
+
+    res.status(200).json({
+      success: true,
+      // count: allProperties.length,
+      message: `Found properties from ${topCityNames.length} most popular cities`,
+      // data: allProperties, // Complete property objects
+      // cityBreakdown: cityData, // City-wise breakdown
+      topCities: cityCounts.map(c => ({
+        city: c._id,
+        totalProperties: c.propertyCount
+      }))
+    });
+
+  } catch (error) {
+    console.error("❌ Get most popular cities error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch properties from popular cities",
+      error: error.message
+    });
+  }
 };

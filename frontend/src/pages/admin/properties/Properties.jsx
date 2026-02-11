@@ -383,6 +383,11 @@ const Properties = () => {
                             {formatTimeAgo(property.createdAt)}
                           </span>
                         </div>
+                        <div className="mb-1">
+                          <span className={`text-xs font-mono ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                            ID: {property._id}
+                          </span>
+                        </div>
 
                         <div className="flex items-center gap-1 mb-1">
                           <MapPin className={`w-3 h-3 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} />
@@ -558,10 +563,26 @@ const Properties = () => {
                           </span>
                         )}
                       </div>
+                      <div className="mt-2">
+                        <span className={`text-xs font-mono ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                          User ID: {propertyDetails.userId?._id || 'N/A'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
+
+              {/* Property ID Display */}
+              <div className={`rounded-xl p-4 mb-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Key className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} />
+                  <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Property ID</span>
+                </div>
+                <p className={`text-sm font-mono font-medium ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                  {propertyDetails._id}
+                </p>
+              </div>
 
               {/* Quick Info */}
               <div className="grid grid-cols-2 gap-3">

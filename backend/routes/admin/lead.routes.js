@@ -1,18 +1,16 @@
 const express = require("express");
 const router = express.Router();
-const controller = require("../../controllers/admin/lead.controller");
-const adminAuth = require("../../middleware/admin.middleware");
+const isAuth = require("../../middleware/auth.middleware");
+const isAdmin = require("../../middleware/admin.middleware");
+const {
+    getAllLeads,
+    markLeadAsSpam
+} = require("../../controllers/lead.controller");
 
-// All leads
-router.get("/", adminAuth, controller.getAllLeads);
+// ✅ Get All Leads (Admin Only)
+router.get("/", isAuth, isAdmin, getAllLeads);
 
-// Leads by property
-router.get("/property/:propertyId", adminAuth, controller.getLeadsByProperty);
-
-// Update lead status
-router.patch("/:id/status", adminAuth, controller.updateLeadStatus);
-
-// Mark spam
-router.patch("/:id/spam", adminAuth, controller.markSpam);
+// ✅ Mark Lead as Spam
+router.patch("/:leadId/spam", isAuth, isAdmin, markLeadAsSpam);
 
 module.exports = router;

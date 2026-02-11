@@ -7,6 +7,9 @@ const upload = require("../middleware/multer.middleware");
 
 // ===== PUBLIC ROUTES (For Flutter App) =====
 
+// Get recently activated properties (public)
+router.get("/recently-activated", filterController.getRecentlyActivatedProperties);
+
 // Search locations for filter dropdown (OpenStreetMap)
 router.get("/locations ", filterController.searchLocationsForFilter);
 

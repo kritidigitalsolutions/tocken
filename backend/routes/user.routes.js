@@ -14,7 +14,10 @@ const {
     saveFcmToken,
     trackPropertyView,
     getMostVisitedProperties,
-    clearMostVisitedProperties,
+    debugMostVisited,
+    getRecentlyAddedProperties,
+    getMostLikedProperties,
+    getMostPopularCities,
 } = require("../controllers/user.controller");
 
 // ✅ User Profile - REST APIs
@@ -41,9 +44,18 @@ router.post("/request-deletion", isAuth, requestAccountDeletion);
 // ✅ FCM Token API
 router.post("/fcm-token", isAuth, saveFcmToken);
 
-// ✅ Most Visited Properties APIs
+// ✅ Global Most Visited Properties APIs  
 router.post("/property-view", isAuth, trackPropertyView);
 router.get("/most-visited-properties", isAuth, getMostVisitedProperties);
-router.delete("/most-visited-properties", isAuth, clearMostVisitedProperties);
+router.get("/debug-most-visited", isAuth, debugMostVisited); // Debug API
+
+// ✅ Recently Added Properties (Simple API)
+router.get("/recently-added-properties", isAuth, getRecentlyAddedProperties);
+
+// ✅ Most Liked Properties (Bookmark Analysis)
+router.get("/most-liked-properties", isAuth, getMostLikedProperties);
+
+// ✅ Most Popular Cities (Properties from top cities by count)
+router.get("/most-popular-cities", isAuth, getMostPopularCities);
 
 module.exports = router;

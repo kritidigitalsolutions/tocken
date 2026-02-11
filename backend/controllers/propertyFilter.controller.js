@@ -802,3 +802,249 @@ exports.getMyProperties = async (req, res) => {
         });
     }
 };
+
+/**
+ * GET RECENTLY ACTIVATED PROPERTIES (PUBLIC API)
+ * GET /api/properties/recently-activated?limit=10&days=7&propertyType=RESIDENTIAL
+ * 
+ * Returns properties recently activated by admin, sorted by activation time
+ * For Flutter app's "Recently Added" section
+ */
+exports.getRecentlyActivatedProperties = async (req, res) => {
+    try {
+        const { 
+            limit = 10, 
+            days = 7,           // Get properties activated in last N days
+            propertyType,       // RESIDENTIAL, COMMERCIAL
+            listingType,        // RENT, SELL, PG, CO_LIVING  
+            city
+        } = req.query;
+
+        // Build query
+        const query = {
+            status: "ACTIVE",
+            activatedAt: { 
+                $ne: null,
+                $gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) // Last N days
+            }
+        };
+
+        // Optional filters
+        if (propertyType) query.propertyType = propertyType;
+        if (listingType) query.listingType = listingType;
+        if (city) query["location.city"] = new RegExp(city, 'i');
+
+        // Get complete property data without field restrictions
+        const properties = await Property.find(query)
+            .populate("userId", "firstName lastName name phone email userType profileImage")
+            .sort({ activatedAt: -1 })  // Newest activated first
+            .limit(parseInt(limit));
+
+        console.log("🔍 Recently activated properties found:", properties.length);
+
+        // Format response with complete property data
+        const formattedProperties = properties.map(property => {
+            console.log("🏠 Processing recently activated property:", property._id, property.propertyCategory);
+
+            // Generate comprehensive title
+            let propertyTitle = property.title;
+            if (!propertyTitle) {
+                if (property.pgDetails?.pgName) {
+                    propertyTitle = property.pgDetails.pgName;
+                } else if (property.coLivingDetails?.coLivingName) {
+                    propertyTitle = property.coLivingDetails.coLivingName;
+                } else {
+                    propertyTitle = `${property.propertyCategory || 'Property'} in ${property.location?.locality || property.location?.city || 'Unknown Location'}`;
+                }
+            }
+
+            // Handle all image types
+            let primaryImage = null;
+            let allImages = [];
+            if (property.images && property.images.length > 0) {
+                allImages = property.images;
+                const primaryImg = property.images.find(img => 
+                    (typeof img === 'object' && img.isPrimary) || 
+                    (typeof img === 'string')
+                );
+                primaryImage = primaryImg ? 
+                    (typeof primaryImg === 'string' ? primaryImg : primaryImg.url) :
+                    (typeof property.images[0] === 'string' ? property.images[0] : property.images[0]?.url);
+            }
+
+            // Get property details based on type
+            let bhkType = "N/A";
+            let area = 0;
+            let specificDetails = {};
+            
+            if (property.residentialDetails) {
+                bhkType = property.residentialDetails.bhkType || "N/A";
+                area = property.residentialDetails.area?.builtUp || property.residentialDetails.area?.carpet || 0;
+                specificDetails = {
+                    type: "residential",
+                    bhkType: property.residentialDetails.bhkType,
+                    area: property.residentialDetails.area,
+                    furnishing: property.residentialDetails.furnishing,
+                    preferredTenants: property.residentialDetails.preferredTenants,
+                    amenities: property.residentialDetails.amenities,
+                    constructionStatus: property.residentialDetails.constructionStatus
+                };
+            } else if (property.commercialDetails) {
+                bhkType = property.commercialDetails.commercialType || "Commercial";
+                area = property.commercialDetails.area?.builtUp || property.commercialDetails.area?.carpet || 0;
+                specificDetails = {
+                    type: "commercial",
+                    commercialType: property.commercialDetails.commercialType,
+                    area: property.commercialDetails.area,
+                    furnished: property.commercialDetails.furnished,
+                    parking: property.commercialDetails.parking,
+                    washrooms: property.commercialDetails.washrooms,
+                    facing: property.commercialDetails.facing
+                };
+            } else if (property.pgDetails) {
+                bhkType = property.pgDetails.accommodationType || "PG";
+                area = property.pgDetails.area || 0;
+                specificDetails = {
+                    type: "pg",
+                    pgName: property.pgDetails.pgName,
+                    pgFor: property.pgDetails.pgFor,
+                    accommodationType: property.pgDetails.accommodationType,
+                    roomTypes: property.pgDetails.roomTypes,
+                    food: property.pgDetails.food,
+                    amenities: property.pgDetails.amenities,
+                    rules: property.pgDetails.rules
+                };
+            } else if (property.coLivingDetails) {
+                bhkType = "Co-Living";
+                area = property.coLivingDetails.area || 0;
+                specificDetails = {
+                    type: "coliving",
+                    coLivingName: property.coLivingDetails.coLivingName,
+                    gender: property.coLivingDetails.gender,
+                    occupation: property.coLivingDetails.occupation,
+                    roomTypes: property.coLivingDetails.roomTypes,
+                    amenities: property.coLivingDetails.amenities
+                };
+            }
+
+            // Comprehensive pricing
+            let pricing = {
+                rent: property.pricing?.rent || property.pricing?.monthlyRent || 0,
+                sale: property.pricing?.sale || property.pricing?.expectedPrice || 0,
+                deposit: property.pricing?.deposit || 0,
+                maintenance: property.pricing?.maintenance || 0
+            };
+
+            // Owner information
+            const owner = {
+                id: property.userId?._id,
+                name: property.userId?.name || 
+                      `${property.userId?.firstName || ''} ${property.userId?.lastName || ''}`.trim() ||
+                      "Unknown Owner",
+                firstName: property.userId?.firstName,
+                lastName: property.userId?.lastName,
+                phone: property.userId?.phone,
+                email: property.userId?.email,
+                userType: property.userId?.userType || "INDIVIDUAL",
+                profileImage: property.userId?.profileImage
+            };
+
+            return {
+                _id: property._id,
+                title: propertyTitle,
+                listingType: property.listingType,
+                propertyType: property.propertyType,
+                propertyCategory: property.propertyCategory,
+                
+                // Complete pricing information
+                pricing: pricing,
+                price: pricing.sale || pricing.rent,
+                priceType: property.listingType === "SELL" ? "sale" : "rent",
+                
+                // Complete location
+                location: {
+                    city: property.location?.city,
+                    locality: property.location?.locality,
+                    area: property.location?.area,
+                    state: property.location?.state,
+                    pincode: property.location?.pincode,
+                    landmark: property.location?.landmark,
+                    society: property.location?.society,
+                    coordinates: property.location?.coordinates,
+                    displayName: property.location?.displayName || 
+                                `${property.location?.locality || ""}, ${property.location?.city || ""}`.trim().replace(/^,\s*/, '')
+                },
+                
+                // Complete image data
+                images: allImages,
+                primaryImage: primaryImage,
+                imageCount: allImages.length,
+                
+                // Property specifications
+                bhk: bhkType,
+                area: area,
+                
+                // Type-specific details
+                details: specificDetails,
+                
+                // Complete descriptions
+                description: property.description,
+                
+                // Owner information
+                owner: owner,
+                
+                // Property metadata
+                status: property.status,
+                isPremium: property.isPremium || false,
+                listingScore: property.listingScore || 0,
+                
+                // Timestamps
+                activatedAt: property.activatedAt,
+                createdAt: property.createdAt,
+                updatedAt: property.updatedAt,
+                daysAgo: Math.floor((Date.now() - new Date(property.activatedAt)) / (1000 * 60 * 60 * 24)),
+                daysOnMarket: Math.floor((Date.now() - new Date(property.createdAt)) / (1000 * 60 * 60 * 24)),
+                
+                // Additional flags
+                isNew: Math.floor((Date.now() - new Date(property.activatedAt)) / (1000 * 60 * 60 * 24)) < 3,
+                isFeatured: property.listingScore > 80,
+                
+                // Property features (if available)
+                features: property.features || [],
+                amenities: property.residentialDetails?.amenities || 
+                          property.commercialDetails?.amenities || 
+                          property.pgDetails?.amenities || 
+                          property.coLivingDetails?.amenities || []
+            };
+        });
+
+        console.log("🎯 Formatted recently activated properties count:", formattedProperties.length);
+
+        res.status(200).json({
+            success: true,
+            count: formattedProperties.length,
+            message: `Found ${formattedProperties.length} recently activated properties`,
+            data: formattedProperties,
+            filters: {
+                days: parseInt(days),
+                propertyType: propertyType || "ALL",
+                listingType: listingType || "ALL",
+                city: city || "ALL",
+                activatedInLast: `${days} days`
+            },
+            debug: {
+                totalFound: properties.length,
+                queryUsed: query,
+                sortBy: "activatedAt (newest first)"
+            }
+        });
+
+    } catch (error) {
+        console.error("❌ Get recently activated properties error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to get recently activated properties",
+            error: error.message
+        });
+    }
+};

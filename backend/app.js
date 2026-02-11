@@ -39,6 +39,12 @@ const leadRoutes = require("./routes/lead.routes");
 // for admin Leads Route
 const adminLeadRoutes = require("./routes/admin/lead.routes");
 
+// lead request routes
+const leadRequestRoutes = require("./routes/leadRequest.routes");
+
+// admin lead request routes
+const adminLeadRequestRoutes = require("./routes/admin/leadRequest.routes");
+
 // bookmark routes
 const bookmarkRoutes = require("./routes/bookmark.routes");
 
@@ -170,6 +176,12 @@ app.use("/api/leads", isAuth, leadRoutes);
 
 // admin leads
 app.use("/api/admin/leads", isAuth, isAdmin, adminLeadRoutes);
+
+// user lead requests
+app.use("/api/lead-requests", isAuth, leadRequestRoutes);
+
+// admin lead requests
+app.use("/api/admin/lead-requests", isAuth, isAdmin, adminLeadRequestRoutes);
 
 // user bookmarks/favorites
 app.use("/api/bookmarks", bookmarkRoutes);

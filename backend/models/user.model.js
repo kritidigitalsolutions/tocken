@@ -91,26 +91,26 @@ const userSchema = new mongoose.Schema(
       ref: "Property"
     }],
 
-    // Most visited properties (tracked when user views)
-    mostVisitedProperties: [{
-      property: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Property"
-      },
-      viewCount: {
-        type: Number,
-        default: 1
-      },
-      lastViewedAt: {
-        type: Date,
-        default: Date.now
-      }
-    }],
-
     // for notification
     fcmToken: {
       type: String,
       default: null
+    },
+
+    // Lead Quota Tracking (for Agents/Owners)
+    leadQuota: {
+      consumed: {
+        type: Number,
+        default: 0
+      },
+      limit: {
+        type: Number,
+        default: 0 // 0 = unlimited
+      },
+      resetDate: {
+        type: Date,
+        default: null
+      }
     },
 
 

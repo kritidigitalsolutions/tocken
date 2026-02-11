@@ -73,6 +73,12 @@ const propertySchema = new mongoose.Schema(
       default: "PENDING"
     },
 
+    // Track when property was activated by admin
+    activatedAt: {
+      type: Date,
+      default: null
+    },
+
     /* ===== RESIDENTIAL ===== */
     residentialDetails: {
       propertyType: String,
