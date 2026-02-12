@@ -218,13 +218,20 @@ exports.updateProfile = async (req, res) => {
       });
     }
 
-    // Build update data
-    const updateData = {
-      firstName,
-      lastName,
-      gstNumber,
-      name: `${firstName} ${lastName}`,
-    };
+    // Build update data - only include fields that are provided
+    const updateData = {};
+    
+    // Only update name fields if both firstName and lastName are provided
+    if (firstName && lastName) {
+      updateData.firstName = firstName;
+      updateData.lastName = lastName;
+      updateData.name = `${firstName} ${lastName}`;
+    }
+    
+    // Update GST number if provided
+    if (gstNumber !== undefined) {
+      updateData.gstNumber = gstNumber;
+    }
 
     // Handle profile image upload to Firebase
     if (req.file) {

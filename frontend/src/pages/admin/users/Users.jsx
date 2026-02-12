@@ -122,6 +122,7 @@ const Users = () => {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(u =>
         u.name?.toLowerCase().includes(query) ||
+        u.username?.toLowerCase().includes(query) ||
         u.phone?.includes(query) ||
         u.userType?.toLowerCase().includes(query) ||
         u.gstNumber?.toLowerCase().includes(query)
@@ -653,6 +654,14 @@ const Users = () => {
                             {user.phone || "No phone"}
                           </span>
                         </div>
+                        {user.username && (
+                          <div className="flex items-center gap-1 mb-1">
+                            <User className={`w-3 h-3 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} />
+                            <span className={`text-xs font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                              @{user.username}
+                            </span>
+                          </div>
+                        )}
                         <div className="mb-1">
                           <span className={`text-xs font-mono ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
                             ID: {user._id}
@@ -818,6 +827,14 @@ const Users = () => {
                           </span>
                         )}
                       </div>
+                      {selectedUser.username && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <User className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} />
+                          <span className={`text-sm font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                            @{selectedUser.username}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
