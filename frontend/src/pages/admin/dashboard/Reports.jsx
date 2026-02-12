@@ -13,7 +13,6 @@ const Reports = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [newReportType, setNewReportType] = useState("analytics");
   const [generating, setGenerating] = useState(false);
-  const [generatedReports, setGeneratedReports] = useState([]);
 
   useEffect(() => {
     const fetchStats = async () => {
