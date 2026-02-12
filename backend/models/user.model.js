@@ -85,6 +85,26 @@ const userSchema = new mongoose.Schema(
       default: null
     },
 
+    // Plan Subscription Details
+    planSubscription: {
+      startDate: {
+        type: Date,
+        default: null
+      },
+      endDate: {
+        type: Date, 
+        default: null
+      },
+      isActive: {
+        type: Boolean,
+        default: false
+      },
+      autoRenewal: {
+        type: Boolean,
+        default: false
+      }
+    },
+
     // Bookmarked/Favorite properties
     bookmarks: [{
       type: mongoose.Schema.Types.ObjectId,

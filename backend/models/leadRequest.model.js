@@ -1,15 +1,17 @@
 const mongoose = require("mongoose");
 
+// 🗂️ LEAD REQUEST MODEL (DEMAND ONLY)
+// This represents user requests for leads, not actual leads
 const leadRequestSchema = new mongoose.Schema(
     {
-        // Requester Info
-        userId: {
+        // 🔹 Requester Info
+        requestedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             required: true
         },
 
-        // Request Details
+        // 🔹 Request Details (Clean Architecture)
         leadType: {
             type: String,
             enum: ["BUYERS", "RENTERS", "BOTH"],
@@ -23,44 +25,39 @@ const leadRequestSchema = new mongoose.Schema(
 
         propertyTypes: [{
             type: String,
+            // enum: ["Apartment", "Villa", "Plot", "Office", "Shop", "Warehouse"],
             required: true
         }],
 
-        // Additional Filters (optional)
+        // 🔹 Optional Filters
         budgetRange: {
-            min: Number,
-            max: Number
+            min: {
+                type: Number,
+                default: 0
+            },
+            max: {
+                type: Number,
+                default: 0
+            }
         },
 
-        // Request Status
+        // 🔹 Request Status Flow
         status: {
             type: String,
-            enum: ["PENDING", "APPROVED", "REJECTED", "FULFILLED"],
+            enum: ["PENDING", "APPROVED", "REJECTED"],
             default: "PENDING"
         },
 
-        // Admin Response
+        // 🔹 Admin Response
         approvedBy: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Admin"
+            ref: "User" // Admin user
         },
 
         approvedAt: Date,
-
         rejectionReason: String,
 
-        // Leads Sent
-        leadsAssigned: {
-            type: Number,
-            default: 0
-        },
-
-        assignedLeadIds: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Lead"
-        }],
-
-        // Notes
+        // 🔹 Request Notes
         requestNotes: String, // User's notes
         adminNotes: String    // Admin's internal notes
 
@@ -68,8 +65,8 @@ const leadRequestSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-// Indexes
-leadRequestSchema.index({ userId: 1, status: 1 });
+// Indexes for performance
+leadRequestSchema.index({ requestedBy: 1, status: 1 });
 leadRequestSchema.index({ status: 1, createdAt: -1 });
 
 module.exports = mongoose.model("LeadRequest", leadRequestSchema);

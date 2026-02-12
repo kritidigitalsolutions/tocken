@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import toast, { Toaster } from "react-hot-toast";
-import { getProperties, getPropertyDetails, updatePropertyStatus, deleteProperty, makePremium, removePremium } from "../../../api/admin.property.api";
+import { getProperties, getPropertiesWithBookmarks, getPropertyBookmarks, getPropertyDetails, updatePropertyStatus, deleteProperty, makePremium, removePremium } from "../../../api/admin.property.api";
 import { useTheme } from "../../../context/ThemeContext";
 import Loader from "../../../components/common/Loader";
 import {
@@ -39,6 +39,13 @@ const Properties = () => {
   const [propertyDetails, setPropertyDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  
+  // New filter states
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [timeFilter, setTimeFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("recent");
+  const [showBookmarks, setShowBookmarks] = useState(false);
+  const [stats, setStats] = useState({ total: 0, active: 0, pending: 0, rejected: 0, premium: 0 });
 
   // Listing type tabs with icons
   const listingTabs = [
@@ -66,12 +73,55 @@ const Properties = () => {
     return colors[type] || { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-600 dark:text-gray-400", border: "border-gray-200 dark:border-gray-700" };
   };
 
+  const loadProperties = useCallback(async (useFilters = false) => {
+    try {
+      setLoading(true);
+      const params = { page: 1, limit: 100 };
+      
+      // Add filter params if useFilters is true
+      if (useFilters) {
+        if (statusFilter !== 'all') params.status = statusFilter;
+        if (timeFilter !== 'all') params.timeFilter = timeFilter;
+        if (sortBy) params.sortBy = sortBy;
+      }
+      
+      // Use appropriate API based on whether we want bookmark data
+      const res = showBookmarks 
+        ? await getPropertiesWithBookmarks(params)
+        : await getProperties(params);
+        
+      console.log("API Response:", res);
+      const properties = res?.data?.data || res?.data?.properties || [];
+      console.log("Properties loaded:", properties);
+      if (properties.length > 0) {
+        console.log("First property images:", properties[0].images);
+      }
+      
+      setData(properties);
+      
+      // Update stats if available
+      if (res?.data?.stats) {
+        setStats(res.data.stats);
+      }
+    } catch (err) {
+      console.error("ERROR LOADING PROPERTIES:", err);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [statusFilter, timeFilter, sortBy, showBookmarks]);
+
   // Load properties
   useEffect(() => {
     loadProperties();
-  }, []);
+  }, [loadProperties]);
 
-  // Filter properties based on search and listing type
+  // Reload properties when filters change
+  useEffect(() => {
+    loadProperties(true);
+  }, [loadProperties]);
+
+  // Filter properties based on search and listing type (for client-side filtering)
   useEffect(() => {
     let filtered = data;
 
@@ -97,24 +147,21 @@ const Properties = () => {
     setFilteredData(filtered);
   }, [selectedListingType, searchQuery, data]);
 
-  const loadProperties = async () => {
+  // View bookmark details for a property
+  const [bookmarkDetails, setBookmarkDetails] = useState(null);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
+
+  const handleViewBookmarks = async (propertyId) => {
+    setBookmarkLoading(true);
     try {
-      setLoading(true);
-      const res = await getProperties({ page: 1, limit: 100 });
-      console.log("API Response:", res);
-      const properties = res?.data?.data || res?.data?.properties || [];
-      console.log("Properties loaded:", properties);
-      if (properties.length > 0) {
-        console.log("First property images:", properties[0].images);
-      }
-      setData(properties);
-      setFilteredData(properties);
+      const res = await getPropertyBookmarks(propertyId);
+      setBookmarkDetails(res.data.data);
+      toast.success(`Found ${res.data.data.bookmarkCount} bookmarks`);
     } catch (err) {
-      console.error("ERROR LOADING PROPERTIES:", err);
-      setData([]);
-      setFilteredData([]);
+      console.error("ERROR LOADING BOOKMARKS:", err);
+      toast.error("Failed to load bookmark details");
     } finally {
-      setLoading(false);
+      setBookmarkLoading(false);
     }
   };
 
@@ -307,7 +354,7 @@ const Properties = () => {
             {listingTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = selectedListingType === tab.id;
-              const count = tab.id === "ALL" ? data.length : data.filter(p => p.listingType === tab.id).length;
+              const count = tab.id === "ALL" ? filteredData.length : filteredData.filter(p => p.listingType === tab.id).length;
 
               return (
                 <button
@@ -331,6 +378,85 @@ const Properties = () => {
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        {/* Advanced Filters */}
+        <div className={`px-4 py-3 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
+          <div className="space-y-3">
+            {/* Status Filter Row */}
+            <div className="flex gap-2 text-sm">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className={`px-3 py-1.5 rounded-lg border text-xs ${isDark
+                    ? 'bg-slate-800 border-slate-700 text-white'
+                    : 'bg-white border-gray-200 text-gray-900'
+                  }`}
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending ({stats.pending})</option>
+                <option value="active">Active ({stats.active})</option>
+                <option value="rejected">Rejected ({stats.rejected})</option>
+              </select>
+
+              <select
+                value={timeFilter}
+                onChange={(e) => setTimeFilter(e.target.value)}
+                className={`px-3 py-1.5 rounded-lg border text-xs ${isDark
+                    ? 'bg-slate-800 border-slate-700 text-white'
+                    : 'bg-white border-gray-200 text-gray-900'
+                  }`}
+              >
+                <option value="all">All Time</option>
+                <option value="day">Last 24 Hours</option>
+                <option value="week">Last Week</option>
+                <option value="month">Last Month</option>
+              </select>
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className={`px-3 py-1.5 rounded-lg border text-xs ${isDark
+                    ? 'bg-slate-800 border-slate-700 text-white'
+                    : 'bg-white border-gray-200 text-gray-900'
+                  }`}
+              >
+                <option value="recent">Recent First</option>
+                <option value="premium">Premium First</option>
+                <option value="score">High Score First</option>
+                {showBookmarks && <option value="bookmarks">Most Bookmarked</option>}
+              </select>
+            </div>
+
+            {/* Toggle Bookmark View */}
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
+                Show Bookmark Count
+              </span>
+              <button
+                onClick={() => setShowBookmarks(!showBookmarks)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${showBookmarks
+                    ? 'bg-indigo-600'
+                    : isDark ? 'bg-slate-700' : 'bg-gray-200'
+                  }`}
+              >
+                <span className={`inline-block h-3 w-3 rounded-full bg-white transition-transform ${showBookmarks ? 'translate-x-5' : 'translate-x-1'}`} />
+              </button>
+            </div>
+
+            {/* Stats Row */}
+            <div className="flex gap-4 text-xs">
+              <span className={isDark ? 'text-slate-400' : 'text-gray-500'}>
+                Total: <span className="font-medium">{stats.total}</span>
+              </span>
+              <span className={isDark ? 'text-slate-400' : 'text-gray-500'}>
+                Premium: <span className="font-medium text-yellow-500">{stats.premium}</span>
+              </span>
+              <span className={isDark ? 'text-slate-400' : 'text-gray-500'}>
+                Showing: <span className="font-medium">{filteredData.length}</span>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -401,6 +527,14 @@ const Properties = () => {
                             {formatPrice(property)}
                           </span>
                           <div className="flex items-center gap-2">
+                            {showBookmarks && property.bookmarkCount !== undefined && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400 flex items-center gap-1`}>
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                                </svg>
+                                {property.bookmarkCount}
+                              </span>
+                            )}
                             {property.isPremium && (
                               <Crown className="w-4 h-4 text-yellow-500" />
                             )}
@@ -1247,6 +1381,19 @@ const Properties = () => {
               </div>
 
               <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => handleViewBookmarks(propertyDetails._id)}
+                  disabled={bookmarkLoading}
+                  className={`flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-sm font-medium transition ${isDark
+                      ? 'bg-purple-900/50 text-purple-400 hover:bg-purple-900'
+                      : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                    }`}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                  </svg>
+                  {bookmarkLoading ? 'Loading...' : 'View Bookmarks'}
+                </button>
                 {propertyDetails.isPremium ? (
                   <button
                     onClick={handleRemovePremium}
@@ -1284,6 +1431,38 @@ const Properties = () => {
                   {actionLoading ? 'Deleting...' : 'Permanently Delete'}
                 </button>
               </div>
+
+              {/* Bookmark Details */}
+              {bookmarkDetails && (
+                <div className={`mt-4 p-4 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-purple-50'}`}>
+                  <h4 className={`text-sm font-medium mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Bookmarked by {bookmarkDetails.bookmarkCount} users:
+                  </h4>
+                  <div className="max-h-32 overflow-y-auto space-y-2">
+                    {bookmarkDetails.bookmarkedBy.map((user) => (
+                      <div key={user._id} className={`flex items-center justify-between p-2 rounded-lg ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
+                        <div>
+                          <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {user.name}
+                          </span>
+                          <span className={`text-xs ml-2 px-1.5 py-0.5 rounded ${isDark ? 'bg-slate-600 text-slate-300' : 'bg-gray-100 text-gray-600'}`}>
+                            {user.userType}
+                          </span>
+                        </div>
+                        <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                          {user.phone}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setBookmarkDetails(null)}
+                    className={`mt-2 text-xs ${isDark ? 'text-slate-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'} transition`}
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

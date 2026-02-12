@@ -7,6 +7,12 @@ const permit = require("../../middleware/permission.middleware");
 // All listings
 router.get("/", adminAuth, controller.getAll);
 
+// All listings with bookmark data
+router.get("/with-bookmarks", adminAuth, controller.getAllWithBookmarks);
+
+// Get bookmark information for a specific property
+router.get("/:propertyId/bookmarks", adminAuth, controller.getPropertyBookmarks);
+
 // Get properties of a specific user
 router.get("/user/:userId", adminAuth, controller.getUserProperties);
 

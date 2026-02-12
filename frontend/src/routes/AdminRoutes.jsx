@@ -23,6 +23,12 @@ import AboutUs from "../pages/admin/aboutUs/AboutUs";
 import DeletionRequests from "../pages/admin/deletionRequests/DeletionRequests";
 // for wallpapers
 import Wallpapers from "../pages/admin/wallpapers/Wallpapers";
+// for dashboard sub-pages
+import UserAnalytics from "../pages/admin/dashboard/UserAnalytics";
+import PropertyAnalytics from "../pages/admin/dashboard/PropertyAnalytics";
+import RevenueAnalytics from "../pages/admin/dashboard/RevenueAnalytics";
+import ActivityLogs from "../pages/admin/dashboard/ActivityLogs";
+import Reports from "../pages/admin/dashboard/Reports";
 
 
 const AdminRoutes = () => {
@@ -34,6 +40,11 @@ const AdminRoutes = () => {
         </ProtectedRoute>
       }>
         <Route index element={<Dashboard />} />
+        <Route path="dashboard/user-analytics" element={<UserAnalytics />} />
+        <Route path="dashboard/property-analytics" element={<PropertyAnalytics />} />
+        <Route path="dashboard/revenue-analytics" element={<RevenueAnalytics />} />
+        <Route path="dashboard/activity-logs" element={<ActivityLogs />} />
+        <Route path="dashboard/reports" element={<Reports />} />
         <Route path="users" element={<Users />} />
         <Route path="plans" element={<Plans />} />
         <Route path="faqs" element={<FAQs />} />
@@ -47,6 +58,13 @@ const AdminRoutes = () => {
         <Route path="about-us" element={<AboutUs />} />
         <Route path="deletion-requests" element={<DeletionRequests />} />
         <Route path="wallpapers" element={<Wallpapers />} />
+        
+        {/* Dashboard sub-routes */}
+        <Route path="dashboard/user-analytics" element={<UserAnalytics />} />
+        <Route path="dashboard/property-analytics" element={<PropertyAnalytics />} />
+        <Route path="dashboard/revenue-analytics" element={<RevenueAnalytics />} />
+        <Route path="dashboard/activity-logs" element={<ActivityLogs />} />
+        <Route path="dashboard/reports" element={<Reports />} />
 
 
       </Route>

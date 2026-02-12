@@ -3,6 +3,12 @@ import api from "./api";
 export const getProperties = (params) =>
   api.get("/admin/properties", { params });
 
+export const getPropertiesWithBookmarks = (params) =>
+  api.get("/admin/properties/with-bookmarks", { params });
+
+export const getPropertyBookmarks = (propertyId) =>
+  api.get(`/admin/properties/${propertyId}/bookmarks`);
+
 export const getPropertyDetails = (id) =>
   api.get(`/admin/properties/${id}`);
 

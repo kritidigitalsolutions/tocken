@@ -33,17 +33,15 @@ const propertyRoutes = require("./routes/property.routes");
 // for Admin PropertyRoutes.
 const adminPropertyRoutes = require("./routes/admin/property.routes");
 
-// lead routes
-const leadRoutes = require("./routes/lead.routes");
+// 🔥 NEW CLEAN LEAD SYSTEM
+const cleanLeadRoutes = require("./routes/leads.clean.routes");
+const adminCleanLeadRoutes = require("./routes/admin/leads.clean.routes");
 
-// for admin Leads Route
-const adminLeadRoutes = require("./routes/admin/lead.routes");
-
-// lead request routes
-const leadRequestRoutes = require("./routes/leadRequest.routes");
-
-// admin lead request routes
-const adminLeadRequestRoutes = require("./routes/admin/leadRequest.routes");
+// 🗑️ OLD LEAD SYSTEM (DEPRECATED - DO NOT USE)
+// const leadRoutes = require("./routes/lead.routes");
+// const adminLeadRoutes = require("./routes/admin/lead.routes");
+// const leadRequestRoutes = require("./routes/leadRequest.routes");
+// const adminLeadRequestRoutes = require("./routes/admin/leadRequest.routes");
 
 // bookmark routes
 const bookmarkRoutes = require("./routes/bookmark.routes");
@@ -171,17 +169,15 @@ app.use(
   adminPropertyRoutes
 );
 
-// user leads
-app.use("/api/leads", isAuth, leadRoutes);
+// 🔥 NEW CLEAN LEAD SYSTEM
+app.use("/api/leads", cleanLeadRoutes);
+app.use("/api/admin/leads", adminCleanLeadRoutes);
 
-// admin leads
-app.use("/api/admin/leads", isAuth, isAdmin, adminLeadRoutes);
-
-// user lead requests
-app.use("/api/lead-requests", isAuth, leadRequestRoutes);
-
-// admin lead requests
-app.use("/api/admin/lead-requests", isAuth, isAdmin, adminLeadRequestRoutes);
+// 🗑️ OLD LEAD SYSTEM (REMOVED)
+// app.use("/api/leads", isAuth, leadRoutes);
+// app.use("/api/admin/leads", isAuth, isAdmin, adminLeadRoutes);
+// app.use("/api/lead-requests", isAuth, leadRequestRoutes);
+// app.use("/api/admin/lead-requests", isAuth, isAdmin, adminLeadRequestRoutes);
 
 // user bookmarks/favorites
 app.use("/api/bookmarks", bookmarkRoutes);

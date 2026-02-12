@@ -334,7 +334,9 @@ const Bookmarks = () => {
                     {selectedProperty.residentialDetails.area?.builtUp && (
                       <div>
                         <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>Built Up Area</p>
-                        <p className={isDark ? 'text-white' : 'text-gray-900'}>{selectedProperty.residentialDetails.area.builtUp} sq.ft</p>
+                        <p className={isDark ? 'text-white' : 'text-gray-900'}>
+                          {selectedProperty.residentialDetails.area.builtUp?.value || selectedProperty.residentialDetails.area.builtUp} {selectedProperty.residentialDetails.area.builtUp?.unit || 'sq.ft'}
+                        </p>
                       </div>
                     )}
                     {selectedProperty.residentialDetails.facing && (
@@ -373,7 +375,9 @@ const Bookmarks = () => {
                     {selectedProperty.commercialDetails.area?.builtUp && (
                       <div>
                         <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>Built Up Area</p>
-                        <p className={isDark ? 'text-white' : 'text-gray-900'}>{selectedProperty.commercialDetails.area.builtUp} sq.ft</p>
+                        <p className={isDark ? 'text-white' : 'text-gray-900'}>
+                          {selectedProperty.commercialDetails.area.builtUp?.value || selectedProperty.commercialDetails.area.builtUp} {selectedProperty.commercialDetails.area.builtUp?.unit || 'sq.ft'}
+                        </p>
                       </div>
                     )}
                   </div>

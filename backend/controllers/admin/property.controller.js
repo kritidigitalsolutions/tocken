@@ -1,4 +1,5 @@
 const Property = require("../../models/property.model");
+const User = require("../../models/user.model");
 const FilterProperty = require("../../models/filterProperty.model");
 const Lead = require("../../models/lead.model");
 const logAudit = require("../../utils/auditLogger");
@@ -6,26 +7,120 @@ const { deleteFromFirebase } = require("../../utils/firebaseUpload");
 const mongoose = require("mongoose");
 
 
+exports.getPropertyBookmarks = async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+
+    // Find all users who have bookmarked this property
+    const usersWithBookmarks = await User.find(
+      { bookmarks: propertyId },
+      { name: 1, phone: 1, email: 1, userType: 1 }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        propertyId,
+        bookmarkCount: usersWithBookmarks.length,
+        bookmarkedBy: usersWithBookmarks
+      }
+    });
+  } catch (error) {
+    console.error("ERROR FETCHING PROPERTY BOOKMARKS:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch property bookmarks"
+    });
+  }
+};
+
 exports.getAll = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { 
+      page = 1, 
+      limit = 10, 
+      status, 
+      timeFilter,
+      sortBy = 'recent'
+    } = req.query;
     const skip = (page - 1) * limit;
 
+    // Build filter object
+    let filter = {};
+
+    // Status filter (pending, active, rejected)
+    if (status && status !== 'all') {
+      filter.status = status.toUpperCase();
+    }
+
+    // Time-based filter (day, week, month)
+    if (timeFilter && timeFilter !== 'all') {
+      const now = new Date();
+      let startDate;
+
+      switch (timeFilter) {
+        case 'day':
+          startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+      }
+
+      if (startDate) {
+        filter.createdAt = { $gte: startDate };
+      }
+    }
+
+    // Build sort object
+    let sortOptions = {};
+    switch (sortBy) {
+      case 'recent':
+        sortOptions = { createdAt: -1 };
+        break;
+      case 'premium':
+        sortOptions = { 
+          isPremium: -1, 
+          "premium.boostRank": -1, 
+          createdAt: -1 
+        };
+        break;
+      case 'score':
+        sortOptions = { 
+          listingScore: -1, 
+          createdAt: -1 
+        };
+        break;
+      default:
+        sortOptions = { createdAt: -1 };
+    }
+
     const [properties, total] = await Promise.all([
-      Property.find()
+      Property.find(filter)
         .select("listingType propertyType propertyCategory pricing location status images listingScore createdAt userId isPremium premium description")
         .populate("userId", "name phone email")
-        .sort({
-          isPremium: -1,
-          "premium.boostRank": -1,
-          listingScore: -1,
-          createdAt: -1
-        })
+        .sort(sortOptions)
         .skip(skip)
         .limit(Number(limit)),
 
-      Property.countDocuments()
+      Property.countDocuments(filter)
     ]);
+
+    // Get status stats
+    const statusStats = await Property.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } }
+    ]);
+
+    const stats = {
+      total: await Property.countDocuments(),
+      active: statusStats.find(s => s._id === "ACTIVE")?.count || 0,
+      pending: statusStats.find(s => s._id === "PENDING")?.count || 0,
+      rejected: statusStats.find(s => s._id === "REJECTED")?.count || 0,
+      premium: await Property.countDocuments({ isPremium: true })
+    };
 
     // Debug log
     console.log("Properties fetched:", properties.length);
@@ -36,6 +131,281 @@ exports.getAll = async (req, res) => {
     res.json({
       success: true,
       data: properties,
+      stats,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error("ERROR FETCHING PROPERTIES:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch properties"
+    });
+  }
+};
+
+exports.getAllWithBookmarks = async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 10, 
+      status, 
+      timeFilter,
+      sortBy = 'recent'
+    } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Build filter object
+    let filter = {};
+
+    // Status filter (pending, active, rejected)
+    if (status && status !== 'all') {
+      filter.status = status.toUpperCase();
+    }
+
+    // Time-based filter (day, week, month)
+    if (timeFilter && timeFilter !== 'all') {
+      const now = new Date();
+      let startDate;
+
+      switch (timeFilter) {
+        case 'day':
+          startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+      }
+
+      if (startDate) {
+        filter.createdAt = { $gte: startDate };
+      }
+    }
+
+    // Build sort object
+    let sortOptions = {};
+    switch (sortBy) {
+      case 'recent':
+        sortOptions = { createdAt: -1 };
+        break;
+      case 'premium':
+        sortOptions = { 
+          isPremium: -1, 
+          "premium.boostRank": -1, 
+          createdAt: -1 
+        };
+        break;
+      case 'score':
+        sortOptions = { 
+          listingScore: -1, 
+          createdAt: -1 
+        };
+        break;
+      case 'bookmarks':
+        // Will be handled in aggregation pipeline
+        break;
+      default:
+        sortOptions = { createdAt: -1 };
+    }
+
+    // Use aggregation to get bookmark counts
+    const propertiesAgg = await Property.aggregate([
+      { $match: filter },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: 'bookmarks',
+          as: 'bookmarkedBy'
+        }
+      },
+      {
+        $addFields: {
+          bookmarkCount: { $size: '$bookmarkedBy' }
+        }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      {
+        $addFields: {
+          userId: { $arrayElemAt: ['$user', 0] }
+        }
+      },
+      {
+        $project: {
+          listingType: 1,
+          propertyType: 1,
+          propertyCategory: 1,
+          pricing: 1,
+          location: 1,
+          status: 1,
+          images: 1,
+          listingScore: 1,
+          createdAt: 1,
+          isPremium: 1,
+          premium: 1,
+          description: 1,
+          bookmarkCount: 1,
+          'userId._id': 1,
+          'userId.name': 1,
+          'userId.phone': 1,
+          'userId.email': 1
+        }
+      },
+      ...(sortBy === 'bookmarks' 
+        ? [{ $sort: { bookmarkCount: -1, createdAt: -1 } }]
+        : [{ $sort: sortOptions }]
+      ),
+      { $skip: skip },
+      { $limit: Number(limit) }
+    ]);
+
+    const total = await Property.countDocuments(filter);
+
+    // Get status stats
+    const statusStats = await Property.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } }
+    ]);
+
+    const stats = {
+      total: await Property.countDocuments(),
+      active: statusStats.find(s => s._id === "ACTIVE")?.count || 0,
+      pending: statusStats.find(s => s._id === "PENDING")?.count || 0,
+      rejected: statusStats.find(s => s._id === "REJECTED")?.count || 0,
+      premium: await Property.countDocuments({ isPremium: true })
+    };
+
+    res.json({
+      success: true,
+      data: propertiesAgg,
+      stats,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error("ERROR FETCHING PROPERTIES WITH BOOKMARKS:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch properties with bookmarks"
+    });
+  }
+};
+
+exports.getAll = async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 10, 
+      status, 
+      timeFilter,
+      sortBy = 'recent'
+    } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Build filter object
+    let filter = {};
+
+    // Status filter (pending, active, rejected)
+    if (status && status !== 'all') {
+      filter.status = status.toUpperCase();
+    }
+
+    // Time-based filter (day, week, month)
+    if (timeFilter && timeFilter !== 'all') {
+      const now = new Date();
+      let startDate;
+
+      switch (timeFilter) {
+        case 'day':
+          startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+      }
+
+      if (startDate) {
+        filter.createdAt = { $gte: startDate };
+      }
+    }
+
+    // Build sort object
+    let sortOptions = {};
+    switch (sortBy) {
+      case 'recent':
+        sortOptions = { createdAt: -1 };
+        break;
+      case 'premium':
+        sortOptions = { 
+          isPremium: -1, 
+          "premium.boostRank": -1, 
+          createdAt: -1 
+        };
+        break;
+      case 'score':
+        sortOptions = { 
+          listingScore: -1, 
+          createdAt: -1 
+        };
+        break;
+      default:
+        sortOptions = { createdAt: -1 };
+    }
+
+    const [properties, total] = await Promise.all([
+      Property.find(filter)
+        .select("listingType propertyType propertyCategory pricing location status images listingScore createdAt userId isPremium premium description")
+        .populate("userId", "name phone email")
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(Number(limit)),
+
+      Property.countDocuments(filter)
+    ]);
+
+    // Get status stats
+    const statusStats = await Property.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } }
+    ]);
+
+    const stats = {
+      total: await Property.countDocuments(),
+      active: statusStats.find(s => s._id === "ACTIVE")?.count || 0,
+      pending: statusStats.find(s => s._id === "PENDING")?.count || 0,
+      rejected: statusStats.find(s => s._id === "REJECTED")?.count || 0,
+      premium: await Property.countDocuments({ isPremium: true })
+    };
+
+    // Debug log
+    console.log("Properties fetched:", properties.length);
+    if (properties.length > 0) {
+      console.log("First property images:", properties[0].images);
+    }
+
+    res.json({
+      success: true,
+      data: properties,
+      stats,
       pagination: {
         total,
         page: Number(page),

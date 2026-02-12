@@ -15,15 +15,21 @@ import {
   Info,
   UserX,
   Wallpaper,
-  Menu
+  Menu,
+  ChevronDown,
+  Activity,
+  DollarSign,
+  FileBarChart
 } from "lucide-react";
 import clsx from "clsx";
+import { useState } from "react";
 import { useTheme } from "../context/ThemeContext";
 import { useSidebar } from "../context/SidebarContext";
 
 const Sidebar = () => {
   const { isDark } = useTheme();
   const { isCollapsed, toggleSidebar } = useSidebar();
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
@@ -76,6 +82,91 @@ const Sidebar = () => {
     </Tooltip>
   );
 
+  // Dashboard Dropdown Component
+  const DashboardDropdown = () => (
+    <div className="space-y-1">
+      <Tooltip label="Dashboard">
+        <button
+          onClick={() => !isCollapsed && setIsDashboardOpen(!isDashboardOpen)}
+          className={clsx(
+            "flex items-center rounded-xl transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] relative group w-full",
+            isCollapsed 
+              ? "w-11 h-11 justify-center mx-auto" 
+              : "gap-3 px-4 py-2.5 w-full",
+            isDark 
+              ? "text-slate-400 hover:bg-slate-800/80 hover:text-white" 
+              : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+          )}
+        >
+          <LayoutDashboard size={20} className="flex-shrink-0 transition-transform duration-500" />
+          <span className={`flex-1 text-left transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] whitespace-nowrap overflow-hidden ${
+            isCollapsed ? 'w-0 opacity-0 ml-0' : 'w-auto opacity-100 ml-0'
+          }`}>
+            Dashboard
+          </span>
+          {!isCollapsed && (
+            <div className={`transition-transform duration-300 ${isDashboardOpen ? 'rotate-180' : 'rotate-0'}`}>
+              <ChevronDown size={16} />
+            </div>
+          )}
+        </button>
+      </Tooltip>
+      
+      {/* Dropdown Items */}
+      {!isCollapsed && isDashboardOpen && (
+        <div className="ml-4 space-y-1 animate-in slide-in-from-top-2 duration-300">
+          <DashboardSubItem to="/admin/dashboard/user-analytics" icon={Users} label="User Analytics" />
+          <DashboardSubItem to="/admin/dashboard/property-analytics" icon={Home} label="Property Analytics" />
+          <DashboardSubItem to="/admin/dashboard/revenue-analytics" icon={DollarSign} label="Revenue Analytics" />
+          <DashboardSubItem to="/admin/dashboard/activity-logs" icon={Activity} label="Activity Logs" />
+          <DashboardSubItem to="/admin/dashboard/reports" icon={FileBarChart} label="Reports" />
+        </div>
+      )}
+      
+      {/* Collapsed state dropdown */}
+      {isCollapsed && (
+        <div className="absolute left-full ml-3 top-0 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
+          <div className={`rounded-xl p-3 shadow-xl border min-w-[200px] ${
+            isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'
+          }`}>
+            <h4 className={`font-semibold mb-2 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>Dashboard</h4>
+            <div className="space-y-1">
+              <DashboardSubItem to="/admin/dashboard/user-analytics" icon={Users} label="User Analytics" compact />
+              <DashboardSubItem to="/admin/dashboard/property-analytics" icon={Home} label="Property Analytics" compact />
+              <DashboardSubItem to="/admin/dashboard/revenue-analytics" icon={DollarSign} label="Revenue Analytics" compact />
+              <DashboardSubItem to="/admin/dashboard/activity-logs" icon={Activity} label="Activity Logs" compact />
+              <DashboardSubItem to="/admin/dashboard/reports" icon={FileBarChart} label="Reports" compact />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // Dashboard Sub Menu Item
+  const DashboardSubItem = ({ to, icon: Icon, label, end = false, compact = false }) => (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        clsx(
+          "flex items-center gap-3 rounded-lg transition-all duration-200",
+          compact ? "px-3 py-2 text-sm" : "px-4 py-2",
+          isActive
+            ? isDark 
+              ? "bg-indigo-500/20 text-indigo-400" 
+              : "bg-indigo-50 text-indigo-600"
+            : isDark 
+              ? "text-slate-300 hover:bg-slate-700/50 hover:text-white" 
+              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+        )
+      }
+    >
+      <Icon size={16} className="flex-shrink-0" />
+      <span className="whitespace-nowrap">{label}</span>
+    </NavLink>
+  );
+
   return (
     <aside className={`flex flex-col theme-transition border-r transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
       isCollapsed ? 'w-[76px]' : 'w-64'
@@ -115,7 +206,7 @@ const Sidebar = () => {
       {/* Menu */}
       <nav className={`flex-1 p-3 space-y-1.5 overflow-y-auto overflow-x-hidden ${isCollapsed ? 'px-2' : ''}`}>
 
-        <MenuItem to="/admin" icon={LayoutDashboard} label="Dashboard" end />
+        <DashboardDropdown />
         <MenuItem to="/admin/users" icon={Users} label="All Users" />
         <MenuItem to="/admin/properties" icon={Home} label="All Properties" />
         <MenuItem to="/admin/leads" icon={PhoneCall} label="Leads" />

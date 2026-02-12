@@ -14,7 +14,10 @@ exports.getAllBookmarks = async (req, res) => {
           isDeleted: false,
           ...(category && category !== "All" && { propertyCategory: category })
         },
-        select: "-__v"
+        populate: {
+          path: "userId",
+          select: "name phone email"
+        }
       })
       .select("name phone bookmarks");
 
