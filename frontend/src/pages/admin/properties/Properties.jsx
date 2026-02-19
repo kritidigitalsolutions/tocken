@@ -73,17 +73,15 @@ const Properties = () => {
     return colors[type] || { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-600 dark:text-gray-400", border: "border-gray-200 dark:border-gray-700" };
   };
 
-  const loadProperties = useCallback(async (useFilters = false) => {
+  const loadProperties = useCallback(async () => {
     try {
       setLoading(true);
       const params = { page: 1, limit: 100 };
       
-      // Add filter params if useFilters is true
-      if (useFilters) {
-        if (statusFilter !== 'all') params.status = statusFilter;
-        if (timeFilter !== 'all') params.timeFilter = timeFilter;
-        if (sortBy) params.sortBy = sortBy;
-      }
+      // Always apply filters
+      if (statusFilter !== 'all') params.status = statusFilter;
+      if (timeFilter !== 'all') params.timeFilter = timeFilter;
+      if (sortBy) params.sortBy = sortBy;
       
       // Use appropriate API based on whether we want bookmark data
       const res = showBookmarks 
@@ -111,14 +109,9 @@ const Properties = () => {
     }
   }, [statusFilter, timeFilter, sortBy, showBookmarks]);
 
-  // Load properties
+  // Load properties whenever filters change
   useEffect(() => {
     loadProperties();
-  }, [loadProperties]);
-
-  // Reload properties when filters change
-  useEffect(() => {
-    loadProperties(true);
   }, [loadProperties]);
 
   // Filter properties based on search and listing type (for client-side filtering)

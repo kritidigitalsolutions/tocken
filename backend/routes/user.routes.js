@@ -56,6 +56,6 @@ router.get("/recently-added-properties", isAuth, getRecentlyAddedProperties);
 router.get("/most-liked-properties", isAuth, getMostLikedProperties);
 
 // ✅ Most Popular Cities (Properties from top cities by count)
-router.get("/most-popular-cities", isAuth, getMostPopularCities);
+// router.get("/most-popular-cities", isAuth, getMostPopularCities);
 
 module.exports = router;

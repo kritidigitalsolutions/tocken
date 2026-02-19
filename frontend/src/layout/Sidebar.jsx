@@ -19,7 +19,8 @@ import {
   ChevronDown,
   Activity,
   DollarSign,
-  FileBarChart
+  FileBarChart,
+  MapPin
 } from "lucide-react";
 import clsx from "clsx";
 import { useState } from "react";
@@ -215,6 +216,7 @@ const Sidebar = () => {
         <MenuItem to="/admin/faqs" icon={HelpCircle} label="FAQs" />
         <MenuItem to="/admin/banners" icon={Image} label="Banners" />
         <MenuItem to="/admin/wallpapers" icon={Wallpaper} label="Wallpapers" />
+        <MenuItem to="/admin/most-popular-cities" icon={MapPin} label="Popular Cities" />
         <MenuItem to="/admin/feedbacks" icon={MessageSquare} label="All Feedbacks" />
         <MenuItem to="/admin/notifications" icon={Bell} label="Notifications" />
         <MenuItem to="/admin/legal" icon={FileText} label="Legal Pages" />

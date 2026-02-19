@@ -79,6 +79,10 @@ const adminWallpaperRoutes = require("./routes/admin/wallpaper.routes");
 // location routes
 const locationRoutes = require("./routes/location.routes.js");
 
+// most popular cities routes
+const mostPopularCitiesRoutes = require("./routes/mostPopularCities.routes");
+const adminMostPopularCitiesRoutes = require("./routes/admin/mostPopularCities.routes");
+
 // cron job
 const cron = require("node-cron");
 
@@ -211,6 +215,12 @@ app.use("/api/wallpapers", wallpaperRoutes);
 
 // admin wallpapers
 app.use("/api/admin/wallpapers", isAuth, isAdmin, adminWallpaperRoutes);
+
+// most popular cities (public - for Flutter app)
+app.use("/api/most-popular-cities", mostPopularCitiesRoutes);
+
+// admin most popular cities
+app.use("/api/admin/most-popular-cities", isAuth, isAdmin, adminMostPopularCitiesRoutes);
 
 // Scheduled Tasks
 cron.schedule("0 * * * *", expirePremiumListings); // every hour

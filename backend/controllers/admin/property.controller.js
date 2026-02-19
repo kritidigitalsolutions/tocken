@@ -1,11 +1,66 @@
 const Property = require("../../models/property.model");
 const User = require("../../models/user.model");
 const FilterProperty = require("../../models/filterProperty.model");
+const MostPopularCities = require("../../models/mostPopularCities.model");
 const Lead = require("../../models/lead.model");
 const logAudit = require("../../utils/auditLogger");
 const { deleteFromFirebase } = require("../../utils/firebaseUpload");
 const mongoose = require("mongoose");
 
+/**
+ * Helper function to update city count in MostPopularCities
+ * Called whenever a property is activated or deactivated
+ */
+async function updateCityCount(cityName) {
+  if (!cityName) return;
+
+  try {
+    // Count unique active properties for this city
+    const cityData = await FilterProperty.aggregate([
+      {
+        $match: {
+          "location.city": cityName
+        }
+      },
+      {
+        $group: {
+          _id: "$location.city",
+          uniqueProperties: { $addToSet: "$originalPropertyId" }
+        }
+      },
+      {
+        $project: {
+          totalProperties: { $size: "$uniqueProperties" }
+        }
+      }
+    ]);
+
+    if (cityData.length > 0) {
+      // Update or create city entry
+      await MostPopularCities.findOneAndUpdate(
+        { city: cityName },
+        {
+          city: cityName,
+          totalProperties: cityData[0].totalProperties,
+          lastUpdated: Date.now()
+        },
+        { upsert: true, new: true }
+      );
+      console.log(`✅ Updated MostPopularCities count for ${cityName}: ${cityData[0].totalProperties}`);
+    } else {
+      // No active properties left for this city, update count to 0 or keep as is
+      const existingCity = await MostPopularCities.findOne({ city: cityName });
+      if (existingCity) {
+        existingCity.totalProperties = 0;
+        existingCity.lastUpdated = Date.now();
+        await existingCity.save();
+        console.log(`✅ Updated MostPopularCities count for ${cityName}: 0`);
+      }
+    }
+  } catch (error) {
+    console.error(`Error updating city count for ${cityName}:`, error.message);
+  }
+}
 
 exports.getPropertyBookmarks = async (req, res) => {
   try {
@@ -535,12 +590,22 @@ exports.updateStatus = async (req, res) => {
         await FilterProperty.create(filterData);
         console.log("✅ FilterProperty CREATED for:", propertyId);
       }
+
+      // Update city count in MostPopularCities
+      if (property.location?.city) {
+        await updateCityCount(property.location.city);
+      }
     } 
     // If status is NOT ACTIVE (REJECTED/BLOCKED/PENDING), remove from FilterProperty
     else {
       const deleted = await FilterProperty.findOneAndDelete({ originalPropertyId: propertyId });
       if (deleted) {
         console.log("🗑️ FilterProperty REMOVED for:", propertyId);
+        
+        // Update city count after removal
+        if (property.location?.city) {
+          await updateCityCount(property.location.city);
+        }
       }
     }
 
@@ -645,6 +710,11 @@ exports.permanentDeleteProperty = async (req, res) => {
     // Delete from FilterProperty collection
     const deletedFilterProperties = await FilterProperty.deleteMany({ originalPropertyId: propertyId });
     console.log(`🗑️ Deleted ${deletedFilterProperties.deletedCount} filter property records`);
+
+    // Update city count if property was in a city
+    if (property.location?.city && deletedFilterProperties.deletedCount > 0) {
+      await updateCityCount(property.location.city);
+    }
 
     // Delete the property record permanently
     await Property.findByIdAndDelete(propertyId);
@@ -857,6 +927,10 @@ exports.updateProperty = async (req, res) => {
 
     // If property is ACTIVE, also update in FilterProperty
     if (property.status === "ACTIVE") {
+      const oldFilterProperty = await FilterProperty.findOne({ originalPropertyId: property._id });
+      const oldCity = oldFilterProperty?.location?.city;
+      const newCity = property.location?.city;
+
       await FilterProperty.findOneAndUpdate(
         { originalPropertyId: property._id },
         {
@@ -879,6 +953,14 @@ exports.updateProperty = async (req, res) => {
           }
         }
       );
+
+      // Update city counts if city changed
+      if (oldCity && newCity && oldCity !== newCity) {
+        await updateCityCount(oldCity); // Update old city count
+        await updateCityCount(newCity); // Update new city count
+      } else if (newCity) {
+        await updateCityCount(newCity); // Update current city count
+      }
     }
 
     // Log audit
