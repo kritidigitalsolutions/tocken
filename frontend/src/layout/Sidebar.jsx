@@ -99,7 +99,8 @@ const Sidebar = () => {
               : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
           )}
         >
-          <LayoutDashboard size={20} className="flex-shrink-0 transition-transform duration-500" />
+          <LayoutDashboard size={20} className={`ml-0 flex-shrink-0 transition-transform duration-500 ${
+            isCollapsed ? 'ml-4' : ' ml-0'} `}/>
           <span className={`flex-1 text-left transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] whitespace-nowrap overflow-hidden ${
             isCollapsed ? 'w-0 opacity-0 ml-0' : 'w-auto opacity-100 ml-0'
           }`}>
