@@ -72,10 +72,19 @@ const RevenueAnalytics = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>Monthly Revenue</p>
-              <h3 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>₹4.8L</h3>
+              <h3 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {(() => {
+                  const trend = revenueData?.revenue?.monthlyTrend;
+                  if (!trend || trend.length === 0) return '₹0';
+                  const lastMonth = trend[trend.length - 1]?.revenue || 0;
+                  return lastMonth >= 100000
+                    ? `₹${(lastMonth / 100000).toFixed(1)}L`
+                    : `₹${(lastMonth / 1000).toFixed(0)}K`;
+                })()}
+              </h3>
               <p className="text-blue-500 text-sm flex items-center gap-1 mt-1">
                 <BarChart3 size={14} />
-                +12.3% vs last month
+                {revenueData?.revenue?.monthlyTrend?.slice(-1)[0]?.month || 'Current'} month
               </p>
             </div>
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDark ? 'bg-blue-500/20' : 'bg-blue-50'}`}>
@@ -88,10 +97,12 @@ const RevenueAnalytics = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>Active Subscriptions</p>
-              <h3 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>2,847</h3>
+              <h3 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {(revenueData?.revenue?.activeSubscriptionsCount || revenueData?.overview?.totalActiveSubscriptions || 0).toLocaleString()}
+              </h3>
               <p className="text-purple-500 text-sm flex items-center gap-1 mt-1">
                 <CreditCard size={14} />
-                +156 this month
+                Active plan users
               </p>
             </div>
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDark ? 'bg-purple-500/20' : 'bg-purple-50'}`}>
@@ -156,30 +167,45 @@ const RevenueAnalytics = () => {
 
         {/* Monthly Revenue Trend */}
         <div className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
-          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>📈 Daily Revenue Trend</h3>
+          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>📈 Monthly Revenue Trend (Last 6 Months)</h3>
           <div className="space-y-3">
-            {(revenueData?.revenue?.dailyRevenue && revenueData.revenue.dailyRevenue.slice(-6).map((item, idx) => {
-              const date = new Date(item._id);
-              const month = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-              
-              return (
-                <div key={item._id} className="flex items-center justify-between">
+            {revenueData?.revenue?.monthlyTrend && revenueData.revenue.monthlyTrend.length > 0 ? (
+              revenueData.revenue.monthlyTrend.map((item, idx) => (
+                <div key={item._id || idx} className="flex items-center justify-between">
                   <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-                    {month}
+                    {item.month} {item.year}
                   </span>
                   <div className="flex items-center gap-3">
                     <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      ₹{(item.revenue / 1000).toFixed(0)}K
+                      {item.revenue >= 100000
+                        ? `₹${(item.revenue / 100000).toFixed(1)}L`
+                        : `₹${(item.revenue / 1000).toFixed(0)}K`}
                     </span>
                     <span className="text-green-500 text-sm font-medium">
-                      {item.purchases} purchases
+                      {item.purchases} subs
                     </span>
                   </div>
                 </div>
-              );
-            })) || (
+              ))
+            ) : revenueData?.revenue?.dailyRevenue && revenueData.revenue.dailyRevenue.length > 0 ? (
+              revenueData.revenue.dailyRevenue.slice(-6).map((item, idx) => {
+                const date = new Date(item._id);
+                const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                return (
+                  <div key={item._id} className="flex items-center justify-between">
+                    <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{label}</span>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        ₹{(item.revenue / 1000).toFixed(0)}K
+                      </span>
+                      <span className="text-green-500 text-sm font-medium">{item.purchases} subs</span>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
               <p className={`text-center py-4 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                No daily revenue data available
+                No revenue data available for this period
               </p>
             )}
           </div>
@@ -188,32 +214,30 @@ const RevenueAnalytics = () => {
 
       {/* Recent Transactions */}
       <div className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
-        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>💳 Recent High-Value Transactions</h3>
+        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>💳 Recent Plan Subscriptions</h3>
         <div className="space-y-3">
-          {[
-            { user: 'Rajesh Properties', plan: 'Builder Enterprise (Annual)', amount: 59988, time: '5 minutes ago', status: 'success' },
-            { user: 'Mumbai Realty Co.', plan: 'Agent Pro (6 Months)', amount: 11994, time: '12 minutes ago', status: 'success' },
-            { user: 'Delhi Homes Ltd.', plan: 'Builder Standard', amount: 4999, time: '28 minutes ago', status: 'success' },
-            { user: 'Priya Sharma', plan: 'Individual Plus', amount: 1999, time: '1 hour ago', status: 'pending' },
-          ].map((transaction, idx) => (
-            <div key={idx} className={`flex items-center gap-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/30' : 'bg-gray-50'}`}>
-              <div className={`w-3 h-3 rounded-full ${
-                transaction.status === 'success' ? 'bg-green-400' :
-                transaction.status === 'pending' ? 'bg-yellow-400' : 'bg-red-400'
-              }`} />
-              <div className="flex-1">
-                <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {transaction.user} purchased {transaction.plan}
-                </p>
-                <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                  ₹{transaction.amount.toLocaleString()} • {transaction.time}
-                </p>
+          {(revenueData?.revenue?.recentTransactions && revenueData.revenue.recentTransactions.length > 0) ? (
+            revenueData.revenue.recentTransactions.map((transaction, idx) => (
+              <div key={idx} className={`flex items-center gap-4 p-3 rounded-lg ${isDark ? 'bg-slate-700/30' : 'bg-gray-50'}`}>
+                <div className={`w-3 h-3 rounded-full ${transaction.isActive ? 'bg-green-400' : 'bg-gray-400'}`} />
+                <div className="flex-1">
+                  <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    {transaction.userName || 'Unknown User'} ({transaction.userType || 'User'})
+                  </p>
+                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                    Plan: {transaction.planName} • Started: {transaction.startDate ? new Date(transaction.startDate).toLocaleDateString() : 'N/A'}
+                  </p>
+                </div>
+                <span className={`text-lg font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                  ₹{(transaction.planPrice || 0).toLocaleString()}
+                </span>
               </div>
-              <span className={`text-lg font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
-                ₹{transaction.amount.toLocaleString()}
-              </span>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className={`text-center py-6 text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+              No recent subscription data available
+            </p>
+          )}
         </div>
       </div>
     </div>

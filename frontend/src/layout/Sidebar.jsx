@@ -20,7 +20,8 @@ import {
   Activity,
   DollarSign,
   FileBarChart,
-  MapPin
+  MapPin,
+  Settings
 } from "lucide-react";
 import clsx from "clsx";
 import { useState } from "react";
@@ -87,7 +88,8 @@ const Sidebar = () => {
   const DashboardDropdown = () => (
     <div className="space-y-1">
       <Tooltip label="Dashboard">
-        <button
+        <NavLink
+          to="/admin"
           onClick={() => !isCollapsed && setIsDashboardOpen(!isDashboardOpen)}
           className={clsx(
             "flex items-center rounded-xl transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] relative group w-full",
@@ -111,7 +113,7 @@ const Sidebar = () => {
               <ChevronDown size={16} />
             </div>
           )}
-        </button>
+        </NavLink>
       </Tooltip>
       
       {/* Dropdown Items */}
@@ -223,6 +225,7 @@ const Sidebar = () => {
         <MenuItem to="/admin/legal" icon={FileText} label="Legal Pages" />
         <MenuItem to="/admin/about-us" icon={Info} label="About Us" />
         <MenuItem to="/admin/deletion-requests" icon={UserX} label="Deletion Requests" />
+        <MenuItem to="/admin/settings" icon={Settings} label="Settings" />
 
       </nav>
 

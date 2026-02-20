@@ -137,7 +137,7 @@ const ActivityLogCard = ({ logs, isDark }) => {
     }`}>
       <div className="flex items-center justify-between mb-6">
         <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-          📋 Recent Activity
+          Recent Activity
         </h3>
         <Activity size={20} className={isDark ? 'text-slate-400' : 'text-gray-400'} />
       </div>
@@ -167,7 +167,7 @@ const ActivityLogCard = ({ logs, isDark }) => {
   );
 };
 
-// 🏆 Top Performers Component
+//  Top Performers Component
 const TopPerformersCard = ({ title, data, icon: Icon, isDark }) => {
   return (
     <div className={`rounded-2xl p-6 border backdrop-blur-sm ${
@@ -341,14 +341,6 @@ const Dashboard = () => {
             isDark={isDark}
             subtitle={`${visitors?.uniqueVisitors?.toLocaleString()} unique`}
           />
-          <StatCard
-            title="Conversion"
-            value={`${analytics?.statistics?.conversionRate || 0}%`}
-            icon={TrendingUp}
-            color="red"
-            isDark={isDark}
-            subtitle="Lead to sale rate"
-          />
         </div>
       </section>
 
@@ -360,7 +352,7 @@ const Dashboard = () => {
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           <ChartCard
-            title="📊 Users by Type"
+            title="Users by Type"
             data={Object.entries(analytics?.charts?.usersByType || {}).map(([key, value]) => ({
               name: key,
               value
@@ -369,7 +361,7 @@ const Dashboard = () => {
             isDark={isDark}
           />
           <ChartCard
-            title="🏠 Properties by Status"
+            title="Properties by Status"
             data={Object.entries(analytics?.charts?.propertiesByStatus || {}).map(([key, value]) => ({
               name: key,
               value
@@ -378,7 +370,7 @@ const Dashboard = () => {
             isDark={isDark}
           />
           <ChartCard
-            title="📞 Leads by Status"
+            title="Leads by Status"
             data={Object.entries(analytics?.charts?.leadsByStatus || {}).map(([key, value]) => ({
               name: key,
               value
@@ -397,25 +389,25 @@ const Dashboard = () => {
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
           <TopPerformersCard
-            title="🏆 Top Cities"
+            title="Top Cities"
             data={analytics?.topPerformers?.cities}
             icon={MapPin}
             isDark={isDark}
           />
           <TopPerformersCard
-            title="🏢 Top Categories"
+            title="Top Categories"
             data={analytics?.topPerformers?.categories}
             icon={Home}
             isDark={isDark}
           />
           <TopPerformersCard
-            title="💎 Premium Plans"
+            title="Premium Plans"
             data={analytics?.topPerformers?.plansBuyers}
             icon={Crown}
             isDark={isDark}
           />
           <TopPerformersCard
-            title="📈 Active Subscriptions"
+            title="Active Subscriptions"
             data={analytics?.topPerformers?.activeSubscriptions}
             icon={Star}
             isDark={isDark}
@@ -443,7 +435,7 @@ const Dashboard = () => {
             }`}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  🔖 Bookmark Statistics
+                  Bookmark Statistics
                 </h3>
                 <Bookmark size={20} className={isDark ? 'text-slate-400' : 'text-gray-400'} />
               </div>
@@ -475,7 +467,7 @@ const Dashboard = () => {
             }`}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  👁️ Visitor Analytics
+                  Visitor Analytics
                 </h3>
                 <Eye size={20} className={isDark ? 'text-slate-400' : 'text-gray-400'} />
               </div>
@@ -512,7 +504,7 @@ const Dashboard = () => {
             Revenue Analytics
           </h2>
           <ChartCard
-            title="💰 Daily Revenue Trend"
+            title="Daily Revenue Trend"
             data={analytics?.revenue?.dailyRevenue?.map(item => ({
               name: new Date(item._id).toLocaleDateString(),
               value: item.revenue

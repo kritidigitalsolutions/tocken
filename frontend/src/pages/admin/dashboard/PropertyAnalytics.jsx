@@ -94,10 +94,12 @@ const PropertyAnalytics = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>Premium Properties</p>
-              <h3 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>12,456</h3>
+              <h3 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {(propertyData?.overview?.premiumProperties || 0).toLocaleString()}
+              </h3>
               <p className="text-yellow-500 text-sm flex items-center gap-1 mt-1">
                 <Star size={14} />
-                27.1% premium
+                {totalProperties > 0 ? (((propertyData?.overview?.premiumProperties || 0) / totalProperties * 100).toFixed(1)) : 0}% premium
               </p>
             </div>
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDark ? 'bg-yellow-500/20' : 'bg-yellow-50'}`}>
@@ -109,11 +111,13 @@ const PropertyAnalytics = () => {
         <div className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>Total Views</p>
-              <h3 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>2.8M</h3>
+              <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>Active Properties</p>
+              <h3 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {(propertyData?.charts?.propertiesByStatus?.ACTIVE || 0).toLocaleString()}
+              </h3>
               <p className="text-indigo-500 text-sm flex items-center gap-1 mt-1">
                 <Eye size={14} />
-                +24.5% views
+                {activeRate}% of total
               </p>
             </div>
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDark ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
@@ -126,7 +130,7 @@ const PropertyAnalytics = () => {
       {/* Property Type Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
-          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>🏠 Property Categories</h3>
+          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Property Categories</h3>
           <div className="space-y-4">
             {(propertyData?.charts?.topCategories && propertyData.charts.topCategories.slice(0, 5).map((item, idx) => {
               const total = propertyData.charts.topCategories.reduce((sum, cat) => sum + cat.value, 0);
@@ -160,7 +164,7 @@ const PropertyAnalytics = () => {
 
         {/* Top Cities */}
         <div className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
-          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>🗺️ Top Cities</h3>
+          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Top Cities</h3>
           <div className="space-y-3">
             {(propertyData?.charts?.topCities && propertyData.charts.topCities.slice(0, 6).map((item, idx) => (
               <div key={item.name} className="flex items-center justify-between">
@@ -193,55 +197,75 @@ const PropertyAnalytics = () => {
       {/* Property Performance Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
-          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>📊 Listing Performance</h3>
+          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Listing Performance</h3>
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Avg. Views per Property</span>
-              <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>247</span>
+              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Total Properties</span>
+              <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{totalProperties.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
-              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Avg. Response Time</span>
-              <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>2.3 hrs</span>
+              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Active Listings</span>
+              <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{(propertyData?.charts?.propertiesByStatus?.ACTIVE || 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
-              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Conversion Rate</span>
-              <span className={`font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>4.7%</span>
+              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Active Rate</span>
+              <span className={`font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>{activeRate}%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Property Growth</span>
+              <span className={`font-bold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>+{propertyData?.statistics?.propertyGrowth || 0}%</span>
             </div>
           </div>
         </div>
 
         <div className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
-          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>💰 Price Analysis</h3>
+          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Status Breakdown</h3>
           <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Avg. Property Value</span>
-              <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>₹45.2L</span>
-            </div>
-            <div className="flex justify-between">
-              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Price Range (Most)</span>
-              <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>₹20-50L</span>
-            </div>
+            {Object.entries(propertyData?.charts?.propertiesByStatus || {}).map(([status, count]) => (
+              <div key={status} className="flex justify-between">
+                <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>{status}</span>
+                <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  {count.toLocaleString()}
+                  <span className={`text-xs font-normal ml-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                    ({totalProperties > 0 ? ((count / totalProperties) * 100).toFixed(1) : 0}%)
+                  </span>
+                </span>
+              </div>
+            ))}
+            {Object.keys(propertyData?.charts?.propertiesByStatus || {}).length === 0 && (
+              <p className={`text-center text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>No status data available</p>
+            )}
+          </div>
+        </div>
+
+        <div className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
+          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Quality Metrics</h3>
+          <div className="space-y-3">
             <div className="flex justify-between">
               <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Premium Properties</span>
-              <span className={`font-bold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>₹1Cr+</span>
-            </div>
-          </div>
-        </div>
-
-        <div className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
-          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>⭐ Quality Metrics</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Avg. Listing Score</span>
-              <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>78.5/100</span>
+              <span className={`font-bold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                {(propertyData?.overview?.premiumProperties || 0).toLocaleString()}
+              </span>
             </div>
             <div className="flex justify-between">
-              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>High Quality (80+)</span>
-              <span className={`font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>37.2%</span>
+              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Premium Rate</span>
+              <span className={`font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                {totalProperties > 0
+                  ? (((propertyData?.overview?.premiumProperties || 0) / totalProperties) * 100).toFixed(1)
+                  : 0}%
+              </span>
             </div>
             <div className="flex justify-between">
-              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Needs Improvement</span>
-              <span className={`font-bold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>18.9%</span>
+              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Total Categories</span>
+              <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {propertyData?.charts?.topCategories?.length || 0}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Cities Covered</span>
+              <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {propertyData?.charts?.topCities?.length || 0}
+              </span>
             </div>
           </div>
         </div>

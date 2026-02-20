@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "../../../context/ThemeContext";
-import { Users, TrendingUp, UserPlus, UserCheck, UserMinus, Activity } from "lucide-react";
+import { Users, TrendingUp, UserPlus, UserCheck, Activity } from "lucide-react";
 import { getDashboardAnalytics } from "../../../api/admin.dashboard.api";
 
 const UserAnalytics = () => {
@@ -102,7 +102,7 @@ const UserAnalytics = () => {
           </div>
         </div>
 
-        <div className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
+        {/* <div className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
           <div className="flex items-center justify-between">
             <div>
               <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>Churn Rate</p>
@@ -116,7 +116,7 @@ const UserAnalytics = () => {
               <UserMinus className="text-red-500" size={24} />
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* User Type Distribution */}
@@ -154,32 +154,37 @@ const UserAnalytics = () => {
           </div>
         </div>
 
-        {/* User Growth Chart */}
+        {/* User Growth Chart - Real Data */}
         <div className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
           <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>📈 Growth Trend (Last 6 Months)</h3>
           <div className="space-y-3">
-            {[
-              { month: 'Jan', users: 8500, growth: 12.3 },
-              { month: 'Feb', users: 9200, growth: 8.2 },
-              { month: 'Mar', users: 10100, growth: 9.8 },
-              { month: 'Apr', users: 11200, growth: 10.9 },
-              { month: 'May', users: 11900, growth: 6.3 },
-              { month: 'Jun', users: 12847, growth: 7.9 },
-            ].map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between">
-                <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-                  {item.month}
-                </span>
-                <div className="flex items-center gap-3">
-                  <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {item.users.toLocaleString()}
-                  </span>
-                  <span className="text-green-500 text-sm font-medium">
-                    +{item.growth}%
-                  </span>
-                </div>
-              </div>
-            ))}
+            {(userStats?.growth?.userMonthly && userStats.growth.userMonthly.length > 0) ? (
+              userStats.growth.userMonthly.map((item, idx, arr) => {
+                const prevCount = idx > 0 ? arr[idx - 1].count : 0;
+                const growthPct = prevCount > 0 ? (((item.count - prevCount) / prevCount) * 100).toFixed(1) : null;
+                return (
+                  <div key={idx} className="flex items-center justify-between">
+                    <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                      {item.month} {item.year}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {item.count.toLocaleString()} new users
+                      </span>
+                      {growthPct !== null && (
+                        <span className={`text-sm font-medium ${parseFloat(growthPct) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {parseFloat(growthPct) >= 0 ? '+' : ''}{growthPct}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className={`text-center py-4 text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                No growth data available for last 6 months
+              </p>
+            )}
           </div>
         </div>
       </div>

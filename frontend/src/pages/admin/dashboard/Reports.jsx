@@ -30,14 +30,18 @@ const Reports = () => {
     fetchStats();
   }, [selectedPeriod]);
 
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0];
+
   const initialReports = [
     {
       id: 1,
       title: "Monthly Analytics Report",
       description: "Comprehensive monthly performance and user analytics",
       type: "analytics",
-      size: "2.4 MB",
-      lastGenerated: "2024-02-11",
+      size: "Dynamic",
+      lastGenerated: today,
       status: "ready",
       data: null
     },
@@ -46,8 +50,8 @@ const Reports = () => {
       title: "Revenue Report",
       description: "Financial performance and subscription analytics",
       type: "financial",
-      size: "1.8 MB",
-      lastGenerated: "2024-02-11",
+      size: "Dynamic",
+      lastGenerated: today,
       status: "ready",
       data: null
     },
@@ -56,8 +60,8 @@ const Reports = () => {
       title: "Property Listings Report",
       description: "Property performance and market insights",
       type: "property",
-      size: "3.2 MB",
-      lastGenerated: "2024-02-10",
+      size: "Dynamic",
+      lastGenerated: yesterday,
       status: "ready",
       data: null
     },
@@ -66,8 +70,8 @@ const Reports = () => {
       title: "User Activity Report",
       description: "User engagement and behavior analysis",
       type: "user",
-      size: "2.1 MB",
-      lastGenerated: "2024-02-10",
+      size: "Dynamic",
+      lastGenerated: yesterday,
       status: "ready",
       data: null
     },
@@ -76,8 +80,8 @@ const Reports = () => {
       title: "Lead Conversion Report",
       description: "Lead generation and conversion analytics",
       type: "leads",
-      size: "1.5 MB",
-      lastGenerated: "2024-02-09",
+      size: "Dynamic",
+      lastGenerated: twoDaysAgo,
       status: "ready",
       data: null
     }
@@ -529,35 +533,71 @@ const Reports = () => {
         })}
       </div>
 
-      {/* Report Schedule */}
+      {/* Report Schedule - Dynamic based on actual stats */}
       <div className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
-        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>📅 Scheduled Reports</h3>
+        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>📅 Report Summary</h3>
         
         <div className="space-y-3">
-          {[
-            { name: 'Weekly Analytics Summary', frequency: 'Every Monday', nextRun: '2024-02-12 09:00', active: true },
-            { name: 'Monthly Revenue Report', frequency: 'First of Month', nextRun: '2024-03-01 08:00', active: true },
-            { name: 'Property Performance Report', frequency: 'Every Friday', nextRun: '2024-02-16 10:00', active: false },
-          ].map((schedule, idx) => (
-            <div key={idx} className={`flex items-center justify-between p-3 rounded-lg ${isDark ? 'bg-slate-700/30' : 'bg-gray-50'}`}>
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${schedule.active ? 'bg-green-400' : 'bg-gray-400'}`} />
-                <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{schedule.name}</span>
-              </div>
-              
-              <div className="flex items-center gap-4 text-sm">
-                <span className={isDark ? 'text-slate-400' : 'text-gray-600'}>{schedule.frequency}</span>
-                <span className={isDark ? 'text-slate-400' : 'text-gray-600'}>Next: {schedule.nextRun}</span>
-                <button className={`px-3 py-1 rounded text-xs font-medium ${
-                  schedule.active 
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                    : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-                }`}>
-                  {schedule.active ? 'Active' : 'Inactive'}
-                </button>
-              </div>
+          <div className={`flex items-center justify-between p-3 rounded-lg ${isDark ? 'bg-slate-700/30' : 'bg-gray-50'}`}>
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-green-400" />
+              <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Total Users in System</span>
             </div>
-          ))}
+            <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {statsData?.overview?.totalUsers?.toLocaleString() || '0'}
+            </span>
+          </div>
+
+          <div className={`flex items-center justify-between p-3 rounded-lg ${isDark ? 'bg-slate-700/30' : 'bg-gray-50'}`}>
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-blue-400" />
+              <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Total Properties Listed</span>
+            </div>
+            <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {statsData?.overview?.totalProperties?.toLocaleString() || '0'}
+            </span>
+          </div>
+
+          <div className={`flex items-center justify-between p-3 rounded-lg ${isDark ? 'bg-slate-700/30' : 'bg-gray-50'}`}>
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-purple-400" />
+              <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Active Subscriptions</span>
+            </div>
+            <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {statsData?.overview?.totalActiveSubscriptions?.toLocaleString() || '0'}
+            </span>
+          </div>
+
+          <div className={`flex items-center justify-between p-3 rounded-lg ${isDark ? 'bg-slate-700/30' : 'bg-gray-50'}`}>
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-yellow-400" />
+              <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Total Revenue (Period)</span>
+            </div>
+            <span className={`font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+              ₹{((statsData?.revenue?.total || 0) / 100000).toFixed(2)}L
+            </span>
+          </div>
+
+          <div className={`flex items-center justify-between p-3 rounded-lg ${isDark ? 'bg-slate-700/30' : 'bg-gray-50'}`}>
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-indigo-400" />
+              <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Total Leads Captured</span>
+            </div>
+            <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {statsData?.overview?.totalLeads?.toLocaleString() || '0'}
+            </span>
+          </div>
+
+          <div className={`p-3 rounded-lg border-l-4 border-indigo-500 ${isDark ? 'bg-indigo-900/20' : 'bg-indigo-50'} mt-2`}>
+            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+              📅 Data period: <span className="font-semibold">{statsData?.period?.days || selectedPeriod} days</span>
+              {statsData?.period?.startDate && (
+                <span className="ml-2 text-xs">
+                  ({new Date(statsData.period.startDate).toLocaleDateString()} – {new Date().toLocaleDateString()})
+                </span>
+              )}
+            </p>
+          </div>
         </div>
       </div>
 

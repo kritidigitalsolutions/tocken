@@ -25,6 +25,8 @@ import DeletionRequests from "../pages/admin/deletionRequests/DeletionRequests";
 import Wallpapers from "../pages/admin/wallpapers/Wallpapers";
 // for most popular cities
 import MostPopularCities from "../pages/admin/mostPopularCities/MostPopularCities";
+// for settings
+import Settings from "../pages/admin/settings/Settings";
 // for dashboard sub-pages
 import UserAnalytics from "../pages/admin/dashboard/UserAnalytics";
 import PropertyAnalytics from "../pages/admin/dashboard/PropertyAnalytics";
@@ -61,6 +63,7 @@ const AdminRoutes = () => {
         <Route path="deletion-requests" element={<DeletionRequests />} />
         <Route path="wallpapers" element={<Wallpapers />} />
         <Route path="most-popular-cities" element={<MostPopularCities />} />
+        <Route path="settings" element={<Settings />} />
         
         {/* Dashboard sub-routes */}
         <Route path="dashboard/user-analytics" element={<UserAnalytics />} />

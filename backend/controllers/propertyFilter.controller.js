@@ -342,30 +342,63 @@ exports.filterProperties = async (req, res) => {
                 query["residentialDetails.constructionStatus"] = { $regex: `^${propertyCondition}$`, $options: "i" };
             }
 
-            // Budget filter - FIXED: Use correct field paths from model
-            // RENT = pricing.rent.rentAmount, SELL = pricing.sell.expectedPrice
-            // Only apply if minBudget or maxBudget is greater than 0
+            // Budget filter: use $or to cover all possible price field names
             if ((minBudget && parseInt(minBudget) > 0) || (maxBudget && parseInt(maxBudget) > 0)) {
-                const priceField = listingType === "RENT"
-                    ? "pricing.rent.rentAmount"
-                    : "pricing.sell.expectedPrice";
-
                 const priceQuery = {};
                 if (minBudget && parseInt(minBudget) > 0) priceQuery.$gte = parseInt(minBudget);
                 if (maxBudget && parseInt(maxBudget) > 0) priceQuery.$lte = parseInt(maxBudget);
-                
+
                 if (Object.keys(priceQuery).length > 0) {
-                    query[priceField] = priceQuery;
+                    let priceOrConditions;
+                    if (listingType === "RENT") {
+                        // RENT: rentAmount (residential/commercial) OR leaseAmount
+                        priceOrConditions = [
+                            { "pricing.rent.rentAmount": priceQuery },
+                            { "pricing.rent.leaseAmount": priceQuery }
+                        ];
+                    } else {
+                        // SELL: sell.expectedPrice OR salePrice (both used in model)
+                        priceOrConditions = [
+                            { "pricing.sell.expectedPrice": priceQuery },
+                            { "pricing.salePrice": priceQuery }
+                        ];
+                    }
+                    // Merge safely: if $or already set (from location), move into $and
+                    if (query.$or) {
+                        query.$and = query.$and || [];
+                        query.$and.push({ $or: query.$or });
+                        delete query.$or;
+                    }
+                    if (query.$and) {
+                        query.$and.push({ $or: priceOrConditions });
+                    } else {
+                        query.$or = priceOrConditions;
+                    }
                 }
             }
 
-            // Area filter (database field: residentialDetails.area.builtUp.value)
+            // Area filter: check both residential and commercial area fields
             if ((minArea && parseInt(minArea) > 0) || (maxArea && parseInt(maxArea) > 0)) {
                 const areaQuery = {};
                 if (minArea && parseInt(minArea) > 0) areaQuery.$gte = parseInt(minArea);
                 if (maxArea && parseInt(maxArea) > 0) areaQuery.$lte = parseInt(maxArea);
                 if (Object.keys(areaQuery).length > 0) {
-                    query["residentialDetails.area.builtUp.value"] = areaQuery;
+                    const areaOrConditions = [
+                        { "residentialDetails.area.builtUp.value": areaQuery },
+                        { "residentialDetails.area.carpet.value": areaQuery },
+                        { "commercialDetails.area.builtUp.value": areaQuery },
+                        { "commercialDetails.plot.area": areaQuery }
+                    ];
+                    if (query.$or) {
+                        query.$and = query.$and || [];
+                        query.$and.push({ $or: query.$or });
+                        delete query.$or;
+                    }
+                    if (query.$and) {
+                        query.$and.push({ $or: areaOrConditions });
+                    } else {
+                        query.$or = areaOrConditions;
+                    }
                 }
             }
         }
@@ -409,19 +442,32 @@ exports.filterProperties = async (req, res) => {
                 }
             }
 
-            // Budget for PG - only if > 0
+            // Budget for PG: check pricing.rent.rentAmount AND pgDetails.roomTypes.rentAmount
             if ((minBudget && parseInt(minBudget) > 0) || (maxBudget && parseInt(maxBudget) > 0)) {
                 const priceQuery = {};
                 if (minBudget && parseInt(minBudget) > 0) priceQuery.$gte = parseInt(minBudget);
                 if (maxBudget && parseInt(maxBudget) > 0) priceQuery.$lte = parseInt(maxBudget);
                 if (Object.keys(priceQuery).length > 0) {
-                    query["pricing.rent.rentAmount"] = priceQuery;
+                    const pgPriceOr = [
+                        { "pricing.rent.rentAmount": priceQuery },
+                        { "pgDetails.roomTypes.rentAmount": priceQuery }
+                    ];
+                    if (query.$or) {
+                        query.$and = query.$and || [];
+                        query.$and.push({ $or: query.$or });
+                        delete query.$or;
+                    }
+                    if (query.$and) {
+                        query.$and.push({ $or: pgPriceOr });
+                    } else {
+                        query.$or = pgPriceOr;
+                    }
                 }
             }
         }
 
         // ===== CO-LIVING FILTERS =====
-        if (listingType === "CO_LIVING" || "co_living") {
+        if (listingType === "CO_LIVING" || listingType === "co_living" || listingType === "CO-LIVING") {
             if (!isEmptyValue(lookingFor)) {
                 query["coLivingDetails.lookingFor"] = { $regex: `^${lookingFor}$`, $options: "i" };
             }

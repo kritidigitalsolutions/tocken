@@ -3,6 +3,8 @@ const User = require("../../models/user.model");
 const FilterProperty = require("../../models/filterProperty.model");
 const MostPopularCities = require("../../models/mostPopularCities.model");
 const Lead = require("../../models/lead.model");
+const Notification = require("../../models/notification.model");
+const { sendPushNotification } = require("../../utils/fcm.service");
 const logAudit = require("../../utils/auditLogger");
 const { deleteFromFirebase } = require("../../utils/firebaseUpload");
 const mongoose = require("mongoose");
@@ -544,7 +546,7 @@ exports.updateStatus = async (req, res) => {
       propertyId,
       updateData,
       { new: true }
-    ).populate("userId", "name phone email");
+    ).populate("userId", "name phone email fcmToken");
 
     if (!property) {
       return res.status(404).json({
@@ -617,6 +619,51 @@ exports.updateStatus = async (req, res) => {
       entityId: property._id,
       meta: { newStatus: status }
     });
+
+    // Send notification to property owner
+    if (status === "ACTIVE" || status === "REJECTED") {
+      const ownerId = property.userId?._id || property.userId;
+      const ownerFcmToken = property.userId?.fcmToken;
+      const propLabel = [
+        property.propertyCategory,
+        property.location?.city
+      ].filter(Boolean).join(" in ") || "your property";
+
+      let notifTitle, notifMessage;
+      if (status === "ACTIVE") {
+        notifTitle = "\uD83C\uDF89 Property Approved!";
+        notifMessage = `Your listing "${propLabel}" has been approved and is now live on the platform.`;
+      } else {
+        notifTitle = "\u274C Property Rejected";
+        notifMessage = `Your listing "${propLabel}" has been rejected by the admin. Please review and resubmit if needed.`;
+      }
+
+      // Save in-app notification
+      await Notification.create({
+        title: notifTitle,
+        message: notifMessage,
+        type: "PROPERTY",
+        targetUser: ownerId,
+        isRead: false,
+        metadata: { propertyId: property._id },
+        createdBy: req.user._id || req.user.id,
+        sentAt: new Date()
+      });
+
+      // Send FCM push notification
+      if (ownerFcmToken) {
+        await sendPushNotification({
+          token: ownerFcmToken,
+          title: notifTitle,
+          body: notifMessage,
+          data: {
+            type: "PROPERTY_STATUS",
+            propertyId: property._id.toString(),
+            status
+          }
+        });
+      }
+    }
 
     res.json({
       success: true,
