@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "../../../context/ThemeContext";
 import Loader from "../../../components/common/Loader";
-import { assignLead, getUserQuota } from "../../../api/admin.lead.api";
+import { assignLead, assignLeadBulk, getUserQuota, getSubscriptionUsersCount } from "../../../api/admin.lead.api";
 import api from "../../../api/api";
 
 const LeadAssignment = () => {
@@ -17,6 +17,7 @@ const LeadAssignment = () => {
   const [users, setUsers] = useState([]);
   const [properties, setProperties] = useState([]);
   const [selectedUserQuota, setSelectedUserQuota] = useState(null);
+  const [subscriptionUsersCount, setSubscriptionUsersCount] = useState(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { isDark } = useTheme();
@@ -24,6 +25,7 @@ const LeadAssignment = () => {
   useEffect(() => {
     fetchUsers();
     fetchProperties();
+    fetchSubscriptionUsersCount();
   }, []);
 
   const fetchUsers = async () => {
@@ -69,8 +71,25 @@ const LeadAssignment = () => {
     }
   };
 
+  const fetchSubscriptionUsersCount = async () => {
+    try {
+      const res = await getSubscriptionUsersCount();
+      setSubscriptionUsersCount(res.data?.data);
+      console.log("Subscription users count:", res.data?.data);
+    } catch (err) {
+      console.error("Error fetching subscription users count:", err);
+      setSubscriptionUsersCount(null);
+    }
+  };
+
   const handleUserChange = async (userId) => {
     setFormData(prev => ({ ...prev, assignedTo: userId }));
+    
+    // If bulk assignment is selected, clear the quota info
+    if (userId === "ALL_SUBSCRIPTION_USERS") {
+      setSelectedUserQuota(null);
+      return;
+    }
     
     if (userId) {
       try {
@@ -99,14 +118,43 @@ const LeadAssignment = () => {
     try {
       setSubmitting(true);
       
+      // Check if bulk assignment is selected
+      const isBulkAssignment = formData.assignedTo === "ALL_SUBSCRIPTION_USERS";
+      
       const payload = {
         ...formData,
         propertyId: formData.propertyId || null
       };
       
-      const res = await assignLead(payload);
+      // Remove assignedTo for bulk assignment as it's not needed
+      if (isBulkAssignment) {
+        delete payload.assignedTo;
+      }
       
-      alert("Lead assigned successfully! 🎉");
+      let res;
+      if (isBulkAssignment) {
+        res = await assignLeadBulk(payload);
+      } else {
+        res = await assignLead(payload);
+      }
+      
+      // Show detailed result for bulk assignment
+      if (isBulkAssignment) {
+        const { successfulAssignments, failedAssignments, ineligibleUsers } = res.data.data;
+        let message = `✅ Lead assigned to ${successfulAssignments} users!\n`;
+        
+        if (failedAssignments > 0) {
+          message += `\n⚠️ Failed: ${failedAssignments} users`;
+        }
+        
+        if (ineligibleUsers > 0) {
+          message += `\n❌ Skipped: ${ineligibleUsers} users (no quota)`;
+        }
+        
+        alert(message);
+      } else {
+        alert("Lead assigned successfully! 🎉");
+      }
       
       // Reset form
       setFormData({
@@ -120,6 +168,11 @@ const LeadAssignment = () => {
       });
       setSelectedUserQuota(null);
       
+      // Refresh subscription users count if it was a bulk assignment
+      if (isBulkAssignment) {
+        await fetchSubscriptionUsersCount();
+      }
+      
       console.log("Lead assigned:", res.data);
       
     } catch (err) {
@@ -130,7 +183,9 @@ const LeadAssignment = () => {
     }
   };
 
-  const selectedUser = users.find(u => u._id === formData.assignedTo);
+  const selectedUser = formData.assignedTo === "ALL_SUBSCRIPTION_USERS" 
+    ? { isBulkAssignment: true } 
+    : users.find(u => u._id === formData.assignedTo);
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
@@ -173,6 +228,14 @@ const LeadAssignment = () => {
                     <option value="">
                       {users.length === 0 ? 'Loading users...' : 'Select User'}
                     </option>
+                    
+                    {/* Bulk Assignment Option */}
+                    {subscriptionUsersCount && subscriptionUsersCount.eligibleUsers > 0 && (
+                      <option value="ALL_SUBSCRIPTION_USERS" className="font-bold">
+                        All Subscription Users ({subscriptionUsersCount.eligibleUsers} users)
+                      </option>
+                    )}
+                    
                     {users.length > 0 ? (
                       users.map(user => {
                         const userName = user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown User';
@@ -359,6 +422,50 @@ const LeadAssignment = () => {
               {loading ? (
                 <div className="flex justify-center py-8">
                   <Loader />
+                </div>
+              ) : selectedUser?.isBulkAssignment ? (
+                <div className="space-y-4">
+                  <div className={`p-4 rounded-lg ${isDark ? 'bg-blue-900/30 border border-blue-700' : 'bg-blue-50 border border-blue-200'}`}>
+                    <h3 className={`font-semibold text-lg mb-2 ${isDark ? 'text-blue-300' : 'text-blue-900'}`}>
+                      🎯 Bulk Assignment
+                    </h3>
+                    <p className={`text-sm mb-4 ${isDark ? 'text-blue-200' : 'text-blue-800'}`}>
+                      This lead will be assigned to all users with active subscription plans
+                    </p>
+                    
+                    {subscriptionUsersCount && (
+                      <div className="space-y-2 text-sm">
+                        <div className={`flex justify-between p-2 rounded ${isDark ? 'bg-slate-700' : 'bg-white'}`}>
+                          <span className="font-medium">Total Users with Plans:</span>
+                          <span className={`font-bold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                            {subscriptionUsersCount.totalUsersWithPlans}
+                          </span>
+                        </div>
+                        <div className={`flex justify-between p-2 rounded ${isDark ? 'bg-slate-700' : 'bg-white'}`}>
+                          <span className="font-medium">Eligible Users:</span>
+                          <span className={`font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                            {subscriptionUsersCount.eligibleUsers}
+                          </span>
+                        </div>
+                        <div className={`flex justify-between p-2 rounded ${isDark ? 'bg-slate-700' : 'bg-white'}`}>
+                          <span className="font-medium">Users Out of Quota:</span>
+                          <span className={`font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                            {subscriptionUsersCount.ineligibleUsers}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className={`mt-4 p-3 rounded text-xs ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-700'}`}>
+                      <p className="font-medium mb-1">ℹ️ How it works:</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Lead will be sent to all eligible users</li>
+                        <li>Users without quota will be skipped</li>
+                        <li>Each user's quota will be consumed</li>
+                        <li>All users will receive notifications</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               ) : selectedUser ? (
                 <div className="space-y-4">

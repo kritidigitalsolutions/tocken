@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchUsers, updateUser, deleteUser, togglePhonePrivacy } from "../../../api/user.api";
-import { getUserProperties, updatePropertyStatus, updateProperty, getPropertyDetails, makePremium, removePremium, deleteProperty } from "../../../api/admin.property.api";
+import { getUserProperties, updatePropertyStatus, getPropertyDetails, makePremium, removePremium, deleteProperty } from "../../../api/admin.property.api";
 import { useTheme } from "../../../context/ThemeContext";
 import Loader from "../../../components/common/Loader";
 import toast, { Toaster } from "react-hot-toast";
@@ -25,18 +25,13 @@ import {
   MessageCircle,
   Eye,
   MapPin,
-  // IndianRupee,
   CheckCircle,
   XCircle,
   AlertCircle,
-  Edit3,
-  Save,
   ArrowLeft,
   Image as ImageIcon,
   Key,
   Tag,
-  // Ban,
-  // Mail
 } from "lucide-react";
 
 const defaultAvatar = "https://www.pngall.com/wp-content/uploads/15/User-PNG-Images-HD.png";
@@ -64,9 +59,6 @@ const Users = () => {
   const [propertyDetails, setPropertyDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [propertyModalOpen, setPropertyModalOpen] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [editedProperty, setEditedProperty] = useState(null);
-  const [savingProperty, setSavingProperty] = useState(false);
 
   // User type filter tabs
   const userTypeTabs = [
@@ -195,18 +187,15 @@ const Users = () => {
   const handlePropertyClick = async (property) => {
     setSelectedProperty(property);
     setPropertyModalOpen(true);
-    setEditMode(false);
     setDetailsLoading(true);
     
     try {
       const res = await getPropertyDetails(property._id);
       const fullProperty = res?.data?.property || res?.data || property;
       setPropertyDetails(fullProperty);
-      setEditedProperty({ ...fullProperty });
     } catch (error) {
       console.error("Error loading property details:", error);
       setPropertyDetails(property);
-      setEditedProperty({ ...property });
     } finally {
       setDetailsLoading(false);
     }
@@ -217,8 +206,6 @@ const Users = () => {
     setPropertyModalOpen(false);
     setSelectedProperty(null);
     setPropertyDetails(null);
-    setEditedProperty(null);
-    setEditMode(false);
   };
 
   // Handle property status change
@@ -236,7 +223,6 @@ const Users = () => {
       if (selectedProperty?._id === propertyId) {
         setSelectedProperty({ ...selectedProperty, status: newStatus });
         setPropertyDetails(prev => prev ? { ...prev, status: newStatus } : prev);
-        setEditedProperty(prev => prev ? { ...prev, status: newStatus } : prev);
       }
     } catch (error) {
       const errorMessage = error?.response?.data?.message || error?.message || "Failed to update status";
@@ -299,28 +285,6 @@ const Users = () => {
       toast.error("Failed to delete property");
     } finally {
       setActionLoading(false);
-    }
-  };
-
-  // Handle save property changes
-  const handleSaveProperty = async () => {
-    if (!editedProperty) return;
-    try {
-      setSavingProperty(true);
-      await updateProperty(editedProperty._id, editedProperty);
-      toast.success("Property updated successfully");
-      
-      // Update local state
-      setUserProperties(prev =>
-        prev.map(p => p._id === editedProperty._id ? editedProperty : p)
-      );
-      setSelectedProperty(editedProperty);
-      setPropertyDetails(editedProperty);
-      setEditMode(false);
-    } catch (error) {
-      toast.error("Failed to update property");
-    } finally {
-      setSavingProperty(false);
     }
   };
 
@@ -1128,30 +1092,8 @@ const Users = () => {
                 <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   Property Details
                 </h3>
-                {editMode && (
-                  <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400">
-                    Editing
-                  </span>
-                )}
               </div>
               <div className="flex items-center gap-2">
-                {!editMode ? (
-                  <button
-                    onClick={() => setEditMode(true)}
-                    className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500'}`}
-                  >
-                    <Edit3 className="w-5 h-5" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleSaveProperty}
-                    disabled={savingProperty}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50"
-                  >
-                    <Save className="w-4 h-4" />
-                    {savingProperty ? "Saving..." : "Save"}
-                  </button>
-                )}
                 <button
                   onClick={closePropertyModal}
                   className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500'}`}

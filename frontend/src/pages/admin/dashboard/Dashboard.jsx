@@ -65,9 +65,6 @@ const StatCard = ({ title, value, icon: Icon, color = "indigo", isDark, growth, 
             </div>
           )}
         </div>
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${style.bg}`}>
-          <Icon size={24} className={style.icon} />
-        </div>
       </div>
     </div>
   );

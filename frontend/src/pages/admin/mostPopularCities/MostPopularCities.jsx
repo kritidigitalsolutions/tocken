@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTheme } from "../../../context/ThemeContext";
 import Loader from "../../../components/common/Loader";
 import toast, { Toaster } from "react-hot-toast";
+
 import {
     MapPin,
     RefreshCw,
@@ -11,6 +12,7 @@ import {
     Image as ImageIcon,
     Building2,
     CheckCircle,
+    Trash2,
     X
 } from "lucide-react";
 import {
@@ -320,7 +322,7 @@ const MostPopularCities = () => {
                                                         : "bg-orange-500 hover:bg-orange-600 text-white"
                                                         } disabled:opacity-50`}
                                                 >
-                                                    <ImageIcon size={16} />
+                                                    <Trash2 size={16} />
                                                 </button>
                                             )}
 

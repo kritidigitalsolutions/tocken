@@ -18,6 +18,12 @@ export const rejectLeadRequest = (requestId, data) =>
 export const assignLead = (data) =>
   api.post("/admin/leads/assign", data);
 
+export const assignLeadBulk = (data) =>
+  api.post("/admin/leads/assign-bulk", data);
+
+export const getSubscriptionUsersCount = () =>
+  api.get("/admin/leads/subscription-users-count");
+
 // ===== LEADS MANAGEMENT =====
 export const getAllLeads = (params = {}) => {
   const queryParams = new URLSearchParams(params).toString();

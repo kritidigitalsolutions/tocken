@@ -518,6 +518,8 @@ exports.updateStatus = async (req, res) => {
     const { status } = req.body;
     const propertyId = req.params.id;
 
+    console.log("🔄 Updating property status:", { propertyId, status });
+
     if (!status) {
       return res.status(400).json({
         success: false,
@@ -542,6 +544,7 @@ exports.updateStatus = async (req, res) => {
       updateData.activatedAt = new Date();
     }
 
+    console.log("📝 Finding and updating property...");
     const property = await Property.findByIdAndUpdate(
       propertyId,
       updateData,
@@ -555,124 +558,146 @@ exports.updateStatus = async (req, res) => {
       });
     }
 
+    console.log("✅ Property updated, now handling FilterProperty...");
+
     // If status is ACTIVE, copy to FilterProperty collection
     if (status === "ACTIVE") {
-      // Check if already exists in filter collection
-      const existingFilter = await FilterProperty.findOne({ originalPropertyId: propertyId });
+      try {
+        // Check if already exists in filter collection
+        const existingFilter = await FilterProperty.findOne({ originalPropertyId: propertyId });
 
-      const filterData = {
-        originalPropertyId: property._id,
-        userId: property.userId._id || property.userId,
-        listingType: property.listingType,
-        propertyType: property.propertyType,
-        propertyCategory: property.propertyCategory,
-        residentialDetails: property.residentialDetails,
-        commercialDetails: property.commercialDetails,
-        pgDetails: property.pgDetails,
-        coLivingDetails: property.coLivingDetails,
-        pricing: property.pricing,
-        location: property.location,
-        contact: property.contact,
-        images: property.images,
-        description: property.description,
-        listingScore: property.listingScore,
-        isPremium: property.isPremium,
-        premium: property.premium,
-        originalCreatedAt: property.createdAt,
-        approvedAt: new Date(),
-        approvedBy: req.user._id || req.user.id
-      };
+        const filterData = {
+          originalPropertyId: property._id,
+          userId: property.userId._id || property.userId,
+          listingType: property.listingType,
+          propertyType: property.propertyType,
+          propertyCategory: property.propertyCategory,
+          residentialDetails: property.residentialDetails,
+          commercialDetails: property.commercialDetails,
+          pgDetails: property.pgDetails,
+          coLivingDetails: property.coLivingDetails,
+          pricing: property.pricing,
+          location: property.location,
+          contact: property.contact,
+          images: property.images,
+          description: property.description,
+          listingScore: property.listingScore,
+          isPremium: property.isPremium,
+          premium: property.premium,
+          originalCreatedAt: property.createdAt,
+          approvedAt: new Date(),
+          approvedBy: req.user._id || req.user.id
+        };
 
-      if (existingFilter) {
-        // Update existing filter property
-        await FilterProperty.findByIdAndUpdate(existingFilter._id, filterData);
-        console.log("✅ FilterProperty UPDATED for:", propertyId);
-      } else {
-        // Create new filter property
-        await FilterProperty.create(filterData);
-        console.log("✅ FilterProperty CREATED for:", propertyId);
-      }
+        if (existingFilter) {
+          // Update existing filter property
+          await FilterProperty.findByIdAndUpdate(existingFilter._id, filterData);
+          console.log("✅ FilterProperty UPDATED for:", propertyId);
+        } else {
+          // Create new filter property
+          await FilterProperty.create(filterData);
+          console.log("✅ FilterProperty CREATED for:", propertyId);
+        }
 
-      // Update city count in MostPopularCities
-      if (property.location?.city) {
-        await updateCityCount(property.location.city);
+        // Update city count in MostPopularCities
+        if (property.location?.city) {
+          await updateCityCount(property.location.city);
+        }
+      } catch (filterError) {
+        console.error("⚠️ FilterProperty error (non-critical):", filterError.message);
       }
     } 
     // If status is NOT ACTIVE (REJECTED/BLOCKED/PENDING), remove from FilterProperty
     else {
-      const deleted = await FilterProperty.findOneAndDelete({ originalPropertyId: propertyId });
-      if (deleted) {
-        console.log("🗑️ FilterProperty REMOVED for:", propertyId);
-        
-        // Update city count after removal
-        if (property.location?.city) {
-          await updateCityCount(property.location.city);
-        }
-      }
-    }
-
-    // Log audit
-    await logAudit({
-      adminId: new mongoose.Types.ObjectId(req.user.id),
-      action: status === "ACTIVE" ? "PROPERTY_APPROVED" : status === "REJECTED" ? "PROPERTY_REJECTED" : "PROPERTY_CREATED",
-      entityType: "PROPERTY",
-      entityId: property._id,
-      meta: { newStatus: status }
-    });
-
-    // Send notification to property owner
-    if (status === "ACTIVE" || status === "REJECTED") {
-      const ownerId = property.userId?._id || property.userId;
-      const ownerFcmToken = property.userId?.fcmToken;
-      const propLabel = [
-        property.propertyCategory,
-        property.location?.city
-      ].filter(Boolean).join(" in ") || "your property";
-
-      let notifTitle, notifMessage;
-      if (status === "ACTIVE") {
-        notifTitle = "\uD83C\uDF89 Property Approved!";
-        notifMessage = `Your listing "${propLabel}" has been approved and is now live on the platform.`;
-      } else {
-        notifTitle = "\u274C Property Rejected";
-        notifMessage = `Your listing "${propLabel}" has been rejected by the admin. Please review and resubmit if needed.`;
-      }
-
-      // Save in-app notification
-      await Notification.create({
-        title: notifTitle,
-        message: notifMessage,
-        type: "PROPERTY",
-        targetUser: ownerId,
-        isRead: false,
-        metadata: { propertyId: property._id },
-        createdBy: req.user._id || req.user.id,
-        sentAt: new Date()
-      });
-
-      // Send FCM push notification
-      if (ownerFcmToken) {
-        await sendPushNotification({
-          token: ownerFcmToken,
-          title: notifTitle,
-          body: notifMessage,
-          data: {
-            type: "PROPERTY_STATUS",
-            propertyId: property._id.toString(),
-            status
+      try {
+        const deleted = await FilterProperty.findOneAndDelete({ originalPropertyId: propertyId });
+        if (deleted) {
+          console.log("🗑️ FilterProperty REMOVED for:", propertyId);
+          
+          // Update city count after removal
+          if (property.location?.city) {
+            await updateCityCount(property.location.city);
           }
-        });
+        }
+      } catch (deleteError) {
+        console.error("⚠️ FilterProperty delete error (non-critical):", deleteError.message);
       }
     }
 
-    res.json({
+    // Log audit (non-blocking)
+    try {
+      await logAudit({
+        adminId: new mongoose.Types.ObjectId(req.user.id || req.user._id),
+        action: status === "ACTIVE" ? "PROPERTY_APPROVED" : status === "REJECTED" ? "PROPERTY_REJECTED" : "PROPERTY_UPDATED",
+        entityType: "PROPERTY",
+        entityId: property._id,
+        meta: { newStatus: status }
+      });
+    } catch (auditError) {
+      console.error("Audit logging failed (non-critical):", auditError.message);
+    }
+
+    // Send notification to property owner (non-blocking)
+    if (status === "ACTIVE" || status === "REJECTED") {
+      setImmediate(async () => {
+        try {
+          const ownerId = property.userId?._id || property.userId;
+          const ownerFcmToken = property.userId?.fcmToken;
+          const propLabel = [
+            property.propertyCategory,
+            property.location?.city
+          ].filter(Boolean).join(" in ") || "your property";
+
+          let notifTitle, notifMessage;
+          if (status === "ACTIVE") {
+            notifTitle = "🎉 Property Approved!";
+            notifMessage = `Your listing "${propLabel}" has been approved and is now live on the platform.`;
+          } else {
+            notifTitle = "❌ Property Rejected";
+            notifMessage = `Your listing "${propLabel}" has been rejected by the admin. Please review and resubmit if needed.`;
+          }
+
+          // Save in-app notification
+          await Notification.create({
+            title: notifTitle,
+            message: notifMessage,
+            type: "PROPERTY",
+            targetUser: ownerId,
+            isRead: false,
+            metadata: { propertyId: property._id },
+            createdBy: req.user._id || req.user.id,
+            sentAt: new Date()
+          });
+
+          // Send FCM push notification
+          if (ownerFcmToken) {
+            await sendPushNotification({
+              token: ownerFcmToken,
+              title: notifTitle,
+              body: notifMessage,
+              data: {
+                type: "PROPERTY_STATUS",
+                propertyId: property._id.toString(),
+                status
+              }
+            });
+          }
+        } catch (notifError) {
+          console.error("Notification sending failed (non-critical):", notifError.message);
+        }
+      });
+    }
+
+    console.log("📤 Sending success response...");
+    return res.status(200).json({
       success: true,
       message: `Property status updated to ${status}`,
       property
     });
   } catch (error) {
-    console.error("ERROR UPDATING STATUS:", error);
-    res.status(500).json({
+    console.error("❌ ERROR UPDATING STATUS:", error);
+    console.error("Error stack:", error.stack);
+    return res.status(500).json({
       success: false,
       message: "Failed to update property status",
       error: error.message

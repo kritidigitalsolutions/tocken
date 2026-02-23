@@ -4,7 +4,6 @@ import toast, { Toaster } from "react-hot-toast";
 import {
   Settings as SettingsIcon,
   Mail,
-  Lock,
   Send,
   ShieldCheck,
   CheckCircle2,
@@ -12,7 +11,6 @@ import {
   EyeOff,
   RefreshCw,
   KeyRound,
-  ArrowRight,
   RotateCcw,
 } from "lucide-react";
 import { sendCredentialOtp, verifyCredentialOtp, updateCredentials } from "../../../api/admin.auth.api";
@@ -138,186 +136,25 @@ const StepBar = ({ step, isDark }) => {
   );
 };
 
-// ─── Email Update Section ──────────────────────────────────────────────────────
-const EmailUpdateSection = ({ isDark }) => {
+// ─── Combined Email & Password Update Section ─────────────────────────────────
+const CombinedUpdateSection = ({ isDark }) => {
   const [step, setStep] = useState(STEPS.INPUT);
   const [newEmail, setNewEmail] = useState("");
-  const [otp, setOtp] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const reset = () => {
-    setStep(STEPS.INPUT);
-    setNewEmail("");
-    setOtp("");
-  };
-
-  const handleSendOtp = async () => {
-    if (!newEmail.trim()) return toast.error("Please enter a new email address");
-    const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailReg.test(newEmail)) return toast.error("Enter a valid email address");
-    setLoading(true);
-    try {
-      await sendCredentialOtp("email_change", newEmail.trim());
-      toast.success("OTP sent to your current registered email!");
-      setStep(STEPS.OTP);
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to send OTP");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (otp.length < 6) return toast.error("Enter the 6-digit OTP");
-    setLoading(true);
-    try {
-      await verifyCredentialOtp("email_change", otp);
-      toast.success("OTP verified!");
-      // immediately apply the change
-      await updateCredentials("email_change");
-      toast.success("Email updated successfully!");
-      setStep(STEPS.SUCCESS);
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Invalid or expired OTP");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <SectionCard isDark={isDark}>
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-5">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-          <Mail size={18} className="text-white" />
-        </div>
-        <div>
-          <h3 className={`font-bold text-lg ${isDark ? "text-white" : "text-gray-900"}`}>
-            Change Email Address
-          </h3>
-          <p className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-            OTP will be sent to your current registered email
-          </p>
-        </div>
-      </div>
-
-      <StepBar step={step} isDark={isDark} />
-
-      {/* Step 1 — Enter new email */}
-      {step === STEPS.INPUT && (
-        <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(); }} className="space-y-4">
-          <div>
-            <label className={`block text-sm font-medium mb-1.5 ${isDark ? "text-slate-300" : "text-gray-700"}`}>
-              New Email Address
-            </label>
-            <div className="relative">
-              <Mail size={16} className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-400" : "text-gray-400"}`} />
-              <input
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="newemail@example.com"
-                className={`w-full pl-10 pr-4 py-3 rounded-xl border text-sm outline-none transition-all duration-200 ${
-                  isDark
-                    ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500"
-                    : "bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white"
-                }`}
-              />
-            </div>
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-sm flex items-center justify-center gap-2 hover:from-blue-700 hover:to-indigo-700 active:scale-95 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/30"
-          >
-            {loading ? (
-              <RefreshCw size={16} className="animate-spin" />
-            ) : (
-              <Send size={16} />
-            )}
-            {loading ? "Sending OTP..." : "Send OTP"}
-          </button>
-        </form>
-      )}
-
-      {/* Step 2 — Enter OTP */}
-      {step === STEPS.OTP && (
-        <div className="space-y-4">
-          <p className={`text-sm text-center ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-            Enter the 6-digit OTP sent to your current email
-          </p>
-          <OtpInput value={otp} onChange={setOtp} isDark={isDark} />
-          <button
-            onClick={handleVerifyOtp}
-            disabled={loading || otp.length < 6}
-            className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold text-sm flex items-center justify-center gap-2 hover:from-green-700 hover:to-emerald-700 active:scale-95 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-green-500/30"
-          >
-            {loading ? (
-              <RefreshCw size={16} className="animate-spin" />
-            ) : (
-              <ShieldCheck size={16} />
-            )}
-            {loading ? "Verifying..." : "Verify & Update Email"}
-          </button>
-          <button
-            onClick={() => setStep(STEPS.INPUT)}
-            className={`w-full py-2 text-sm font-medium rounded-xl border transition-all duration-200 ${
-              isDark
-                ? "border-slate-700 text-slate-400 hover:bg-slate-800"
-                : "border-gray-200 text-gray-500 hover:bg-gray-50"
-            }`}
-          >
-            ← Back
-          </button>
-        </div>
-      )}
-
-      {/* Step 3 — Success */}
-      {step === STEPS.SUCCESS && (
-        <div className="text-center py-4 space-y-4">
-          <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
-            <CheckCircle2 size={36} className="text-green-500" />
-          </div>
-          <div>
-            <p className={`font-bold text-lg ${isDark ? "text-white" : "text-gray-900"}`}>
-              Email Updated!
-            </p>
-            <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-              Your admin email has been successfully changed to{" "}
-              <span className="font-medium text-indigo-500">{newEmail}</span>
-            </p>
-          </div>
-          <button
-            onClick={reset}
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium border transition-all duration-200 ${
-              isDark
-                ? "border-slate-700 text-slate-300 hover:bg-slate-800"
-                : "border-gray-200 text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            <RotateCcw size={14} /> Change Again
-          </button>
-        </div>
-      )}
-    </SectionCard>
-  );
-};
-
-// ─── Password Update Section ───────────────────────────────────────────────────
-const PasswordUpdateSection = ({ isDark }) => {
-  const [step, setStep] = useState(STEPS.INPUT);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const [changeType, setChangeType] = useState(""); // 'email', 'password', or 'both'
 
   const reset = () => {
     setStep(STEPS.INPUT);
+    setNewEmail("");
     setNewPassword("");
     setConfirmPassword("");
     setOtp("");
+    setChangeType("");
   };
 
   const strength = (() => {
@@ -334,13 +171,39 @@ const PasswordUpdateSection = ({ isDark }) => {
   })();
 
   const handleSendOtp = async () => {
-    if (!newPassword) return toast.error("Enter a new password");
-    if (newPassword.length < 6) return toast.error("Password must be at least 6 characters");
-    if (newPassword !== confirmPassword) return toast.error("Passwords do not match");
+    const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const hasEmail = newEmail.trim();
+    const hasPassword = newPassword.trim();
+
+    if (!hasEmail && !hasPassword) {
+      return toast.error("Please enter at least email or password to update");
+    }
+
+    if (hasEmail && !emailReg.test(newEmail)) {
+      return toast.error("Enter a valid email address");
+    }
+
+    if (hasPassword) {
+      if (newPassword.length < 6) return toast.error("Password must be at least 6 characters");
+      if (newPassword !== confirmPassword) return toast.error("Passwords do not match");
+    }
+
+    // Determine change type
+    if (hasEmail && hasPassword) {
+      setChangeType("both");
+    } else if (hasEmail) {
+      setChangeType("email");
+    } else {
+      setChangeType("password");
+    }
+
     setLoading(true);
     try {
-      await sendCredentialOtp("password_change");
-      toast.success("OTP sent to your registered email!");
+      // Send OTP (backend will send to current registered email)
+      // Use email_change if email is present, otherwise password_change
+      const purpose = hasEmail ? "email_change" : "password_change";
+      await sendCredentialOtp(purpose, hasEmail ? newEmail.trim() : undefined);
+      toast.success("OTP sent to your current registered email!");
       setStep(STEPS.OTP);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to send OTP");
@@ -353,9 +216,24 @@ const PasswordUpdateSection = ({ isDark }) => {
     if (otp.length < 6) return toast.error("Enter the 6-digit OTP");
     setLoading(true);
     try {
-      await verifyCredentialOtp("password_change", otp);
-      await updateCredentials("password_change", { newPassword });
-      toast.success("Password updated successfully!");
+      // Determine purpose based on what's being changed (email_change has priority)
+      const purpose = (changeType === "email" || changeType === "both") ? "email_change" : "password_change";
+      
+      // Verify OTP
+      await verifyCredentialOtp(purpose, otp);
+      
+      // Update credentials in a single call
+      // For both: send email_change purpose with newPassword
+      // For email only: send email_change purpose
+      // For password only: send password_change purpose with newPassword
+      const payload = {};
+      if (changeType === "password" || changeType === "both") {
+        payload.newPassword = newPassword;
+      }
+      
+      await updateCredentials(purpose, payload);
+
+      toast.success("Credentials updated successfully!");
       setStep(STEPS.SUCCESS);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Invalid or expired OTP");
@@ -368,28 +246,50 @@ const PasswordUpdateSection = ({ isDark }) => {
     <SectionCard isDark={isDark}>
       {/* Header */}
       <div className="flex items-center gap-3 mb-5">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
-          <Lock size={18} className="text-white" />
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+          <SettingsIcon size={18} className="text-white" />
         </div>
         <div>
           <h3 className={`font-bold text-lg ${isDark ? "text-white" : "text-gray-900"}`}>
-            Change Password
+            Update Credentials
           </h3>
           <p className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-            OTP will be sent to your registered email for verification
+            Change your email and/or password with one OTP verification
           </p>
         </div>
       </div>
 
       <StepBar step={step} isDark={isDark} />
 
-      {/* Step 1 — Enter new password */}
+      {/* Step 1 — Enter new credentials */}
       {step === STEPS.INPUT && (
         <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(); }} className="space-y-4">
-          {/* New password */}
+          {/* New Email */}
           <div>
             <label className={`block text-sm font-medium mb-1.5 ${isDark ? "text-slate-300" : "text-gray-700"}`}>
-              New Password
+              New Email Address <span className="text-xs text-slate-500">(Optional)</span>
+            </label>
+            <div className="relative">
+              <Mail size={16} className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-400" : "text-gray-400"}`} />
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="newemail@example.com"
+                autoComplete="email"
+                className={`w-full pl-10 pr-4 py-3 rounded-xl border text-sm outline-none transition-all duration-200 ${
+                  isDark
+                    ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-indigo-500"
+                    : "bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white"
+                }`}
+              />
+            </div>
+          </div>
+
+          {/* New Password */}
+          <div>
+            <label className={`block text-sm font-medium mb-1.5 ${isDark ? "text-slate-300" : "text-gray-700"}`}>
+              New Password <span className="text-xs text-slate-500">(Optional)</span>
             </label>
             <div className="relative">
               <KeyRound size={16} className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-400" : "text-gray-400"}`} />
@@ -398,6 +298,7 @@ const PasswordUpdateSection = ({ isDark }) => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password"
+                autoComplete="new-password"
                 className={`w-full pl-10 pr-11 py-3 rounded-xl border text-sm outline-none transition-all duration-200 ${
                   isDark
                     ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-purple-500"
@@ -432,66 +333,65 @@ const PasswordUpdateSection = ({ isDark }) => {
             )}
           </div>
 
-          {/* Confirm password */}
-          <div>
-            <label className={`block text-sm font-medium mb-1.5 ${isDark ? "text-slate-300" : "text-gray-700"}`}>
-              Confirm Password
-            </label>
-            <div className="relative">
-              <KeyRound size={16} className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-400" : "text-gray-400"}`} />
-              <input
-                type={showConfirm ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
-                placeholder="Re-enter new password"
-                className={`w-full pl-10 pr-11 py-3 rounded-xl border text-sm outline-none transition-all duration-200 ${
-                  isDark
-                    ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-purple-500"
-                    : "bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:bg-white"
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirm(!showConfirm)}
-                className={`absolute right-3.5 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-400 hover:text-slate-300" : "text-gray-400 hover:text-gray-600"}`}
-              >
-                {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+          {/* Confirm Password */}
+          {newPassword && (
+            <div>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? "text-slate-300" : "text-gray-700"}`}>
+                Confirm Password
+              </label>
+              <div className="relative">
+                <KeyRound size={16} className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-400" : "text-gray-400"}`} />
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                  autoComplete="new-password"
+                  className={`w-full pl-10 pr-11 py-3 rounded-xl border text-sm outline-none transition-all duration-200 ${
+                    isDark
+                      ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-purple-500"
+                      : "bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:bg-white"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className={`absolute right-3.5 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-400 hover:text-slate-300" : "text-gray-400 hover:text-gray-600"}`}
+                >
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {confirmPassword && newPassword !== confirmPassword && (
+                <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
+              )}
+              {confirmPassword && newPassword === confirmPassword && (
+                <p className="text-xs text-green-500 mt-1 flex items-center gap-1">
+                  <CheckCircle2 size={12} /> Passwords match
+                </p>
+              )}
             </div>
-            {confirmPassword && newPassword !== confirmPassword && (
-              <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
-            )}
-            {confirmPassword && newPassword === confirmPassword && (
-              <p className="text-xs text-green-500 mt-1 flex items-center gap-1">
-                <CheckCircle2 size={12} /> Passwords match
-              </p>
-            )}
-          </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold text-sm flex items-center justify-center gap-2 hover:from-purple-700 hover:to-pink-700 active:scale-95 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-purple-500/30"
+            className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white font-semibold text-sm flex items-center justify-center gap-2 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 active:scale-95 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-purple-500/30"
           >
             {loading ? (
               <RefreshCw size={16} className="animate-spin" />
             ) : (
-              <>
-                <Send size={16} />
-                Send OTP
-                <ArrowRight size={14} />
-              </>
+              <Send size={16} />
             )}
+            {loading ? "Sending OTP..." : "Send OTP"}
           </button>
         </form>
       )}
 
-      {/* Step 2 — OTP */}
+      {/* Step 2 — Enter OTP */}
       {step === STEPS.OTP && (
         <div className="space-y-4">
           <p className={`text-sm text-center ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-            Enter the 6-digit OTP sent to your registered email
+            Enter the 6-digit OTP sent to your current registered email
           </p>
           <OtpInput value={otp} onChange={setOtp} isDark={isDark} />
           <button
@@ -504,7 +404,7 @@ const PasswordUpdateSection = ({ isDark }) => {
             ) : (
               <ShieldCheck size={16} />
             )}
-            {loading ? "Updating..." : "Verify & Update Password"}
+            {loading ? "Updating..." : "Verify & Update"}
           </button>
           <button
             onClick={() => setStep(STEPS.INPUT)}
@@ -527,10 +427,12 @@ const PasswordUpdateSection = ({ isDark }) => {
           </div>
           <div>
             <p className={`font-bold text-lg ${isDark ? "text-white" : "text-gray-900"}`}>
-              Password Updated!
+              Credentials Updated!
             </p>
             <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-              Your admin password has been successfully changed. Next login will use the new password.
+              {changeType === "both" && `Your email has been changed to ${newEmail} and your password has been updated.`}
+              {changeType === "email" && `Your email has been changed to ${newEmail}.`}
+              {changeType === "password" && "Your password has been successfully updated."}
             </p>
           </div>
           <button
@@ -585,10 +487,9 @@ const Settings = () => {
         </p>
       </div>
 
-      {/* Two panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <EmailUpdateSection isDark={isDark} />
-        <PasswordUpdateSection isDark={isDark} />
+      {/* Single combined panel */}
+      <div className="max-w-3xl mx-auto">
+        <CombinedUpdateSection isDark={isDark} />
       </div>
     </div>
   );

@@ -12,6 +12,8 @@ const {
 
 const {
     assignLead,
+    assignLeadBulk,
+    getSubscriptionUsersCount,
     getAllLeads,
     getUserQuota
 } = require("../../controllers/admin/lead.clean.controller");
@@ -27,6 +29,12 @@ router.post("/requests/:requestId/reject", isAuth, isAdmin, rejectLeadRequest);
 
 // 🔹 D. ADMIN → ASSIGN ACTUAL LEAD
 router.post("/assign", isAuth, isAdmin, assignLead);
+
+// 🔹 ADMIN → ASSIGN LEAD TO ALL SUBSCRIPTION USERS (BULK)
+router.post("/assign-bulk", isAuth, isAdmin, assignLeadBulk);
+
+// 🔹 ADMIN → GET SUBSCRIPTION USERS COUNT
+router.get("/subscription-users-count", isAuth, isAdmin, getSubscriptionUsersCount);
 
 // 🔹 ADMIN → VIEW ALL LEADS
 router.get("/", isAuth, isAdmin, getAllLeads);

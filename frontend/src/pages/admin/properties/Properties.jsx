@@ -283,6 +283,7 @@ const Properties = () => {
       <Toaster
         position="top-right"
         toastOptions={{
+          duration: 3000,
           style: {
             background: isDark ? '#1e293b' : '#ffffff',
             color: isDark ? '#e2e8f0' : '#1f2937',
@@ -347,7 +348,7 @@ const Properties = () => {
             {listingTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = selectedListingType === tab.id;
-              const count = tab.id === "ALL" ? filteredData.length : filteredData.filter(p => p.listingType === tab.id).length;
+              const count = tab.id === "ALL" ? data.length : data.filter(p => p.listingType === tab.id).length;
 
               return (
                 <button
@@ -515,6 +516,15 @@ const Properties = () => {
                           </span>
                         </div>
 
+                        {/* Deleted User Badge */}
+                        {!property.userId && (
+                          <div className="mb-1">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium border border-red-200 dark:border-red-800">
+                              Deleted User
+                            </span>
+                          </div>
+                        )}
+
                         <div className="flex items-center justify-between">
                           <span className={`text-sm font-bold ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
                             {formatPrice(property)}
@@ -665,7 +675,7 @@ const Properties = () => {
               </div>
 
               {/* Owner Info */}
-              {propertyDetails.userId && (
+              {propertyDetails.userId ? (
                 <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
                   <h4 className={`text-sm font-semibold mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Owner Details</h4>
                   <div className="flex items-center gap-3">
@@ -695,6 +705,25 @@ const Properties = () => {
                           User ID: {propertyDetails.userId?._id || 'N/A'}
                         </span>
                       </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className={`rounded-xl p-4 ${isDark ? 'bg-red-900/20 border border-red-800' : 'bg-red-50 border border-red-200'}`}>
+                  <h4 className={`text-sm font-semibold mb-3 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Owner Details</h4>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isDark ? 'bg-red-900/50 border border-red-800' : 'bg-red-100 border border-red-200'}`}>
+                      <span className={`text-lg font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                        ✕
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <p className={`font-semibold text-red-600 dark:text-red-400`}>
+                        Deleted User
+                      </p>
+                      <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
+                        The owner of this property has been deleted from the system.
+                      </p>
                     </div>
                   </div>
                 </div>

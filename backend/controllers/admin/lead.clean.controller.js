@@ -179,6 +179,245 @@ exports.assignLead = async (req, res) => {
 };
 
 /**
+ * 🔹 ADMIN → ASSIGN LEAD TO ALL SUBSCRIPTION USERS (BULK)
+ * POST /api/admin/leads/assign-bulk
+ * Body: { buyerName, phone, city, requirement, leadType, propertyId? }
+ */
+exports.assignLeadBulk = async (req, res) => {
+    try {
+        const { 
+            buyerName, 
+            phone, 
+            city, 
+            requirement, 
+            leadType,
+            propertyId 
+        } = req.body;
+
+        // 🔹 Validation
+        if (!buyerName || !phone || !city || !requirement || !leadType) {
+            return res.status(400).json({
+                success: false,
+                message: "buyerName, phone, city, requirement, and leadType are required"
+            });
+        }
+
+        if (!["BUYER", "RENTER"].includes(leadType)) {
+            return res.status(400).json({
+                success: false,
+                message: "leadType must be BUYER or RENTER"
+            });
+        }
+
+        // 🔹 Validate property reference (optional)
+        if (propertyId) {
+            const property = await Property.findById(propertyId);
+            if (!property) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Property reference not found"
+                });
+            }
+        }
+
+        // 🔹 Get all users with active plans
+        const usersWithPlans = await User.find({
+            activePlan: { $ne: null },
+            'planSubscription.isActive': true
+        }).populate('activePlan');
+
+        if (usersWithPlans.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "No users with active subscription plans found"
+            });
+        }
+
+        // 🔹 Filter users who have available quota
+        const eligibleUsers = [];
+        const ineligibleUsers = [];
+
+        for (const user of usersWithPlans) {
+            const planLimit = user.activePlan.leadsPerMonth || 0;
+            const quotaConsumed = user.leadQuota?.consumed || 0;
+            const isUnlimited = planLimit === 0;
+
+            if (isUnlimited || quotaConsumed < planLimit) {
+                eligibleUsers.push({
+                    user,
+                    isUnlimited,
+                    remaining: isUnlimited ? "Unlimited" : (planLimit - quotaConsumed)
+                });
+            } else {
+                ineligibleUsers.push({
+                    userId: user._id,
+                    userName: user.name,
+                    reason: "Quota exhausted"
+                });
+            }
+        }
+
+        if (eligibleUsers.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "No users have available quota to receive leads",
+                data: {
+                    totalUsersWithPlans: usersWithPlans.length,
+                    eligibleUsers: 0,
+                    ineligibleUsers: ineligibleUsers
+                }
+            });
+        }
+
+        // 🔹 Assign lead to all eligible users
+        const successfulAssignments = [];
+        const failedAssignments = [];
+
+        for (const { user, isUnlimited } of eligibleUsers) {
+            try {
+                // Create lead entry
+                const lead = await Lead.create({
+                    assignedTo: user._id,
+                    leadType,
+                    buyerName,
+                    phone,
+                    city,
+                    requirement,
+                    propertyId: propertyId || null,
+                    status: "NEW",
+                    source: "ADMIN"
+                });
+
+                // Update user's quota
+                if (!isUnlimited) {
+                    await User.findByIdAndUpdate(user._id, {
+                        $inc: { 'leadQuota.consumed': 1 }
+                    });
+                }
+
+                // Create and send notification
+                try {
+                    const notificationTitle = "New Lead Assigned!";
+                    const notificationMessage = `You have been assigned a new ${leadType.toLowerCase()} lead: ${buyerName} from ${city}`;
+                    
+                    await Notification.create({
+                        title: notificationTitle,
+                        message: notificationMessage,
+                        type: "LEAD",
+                        targetUser: user._id,
+                        metadata: {
+                            leadId: lead._id,
+                            actionUrl: "/dashboard/leads"
+                        },
+                        sentAt: new Date()
+                    });
+
+                    if (user.fcmToken) {
+                        await sendPushNotification({
+                            token: user.fcmToken,
+                            title: notificationTitle,
+                            body: notificationMessage,
+                            data: {
+                                type: "LEAD",
+                                leadId: lead._id.toString(),
+                                actionUrl: "/dashboard/leads"
+                            }
+                        });
+                    }
+                } catch (notificationError) {
+                    console.error(`❌ Notification failed for user ${user.name}:`, notificationError);
+                }
+
+                successfulAssignments.push({
+                    userId: user._id,
+                    userName: user.name,
+                    userType: user.userType,
+                    leadId: lead._id,
+                    planName: user.activePlan.planName
+                });
+
+            } catch (error) {
+                console.error(`❌ Failed to assign lead to user ${user.name}:`, error);
+                failedAssignments.push({
+                    userId: user._id,
+                    userName: user.name,
+                    reason: error.message
+                });
+            }
+        }
+
+        res.status(201).json({
+            success: true,
+            message: `Lead assigned to ${successfulAssignments.length} users with active subscriptions`,
+            data: {
+                totalEligibleUsers: eligibleUsers.length,
+                successfulAssignments: successfulAssignments.length,
+                failedAssignments: failedAssignments.length,
+                ineligibleUsers: ineligibleUsers.length,
+                assignments: successfulAssignments,
+                failures: failedAssignments,
+                skipped: ineligibleUsers
+            }
+        });
+
+    } catch (error) {
+        console.error("❌ Bulk assign lead error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to assign lead in bulk",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * 🔹 ADMIN → GET SUBSCRIPTION USERS COUNT
+ * GET /api/admin/leads/subscription-users-count
+ */
+exports.getSubscriptionUsersCount = async (req, res) => {
+    try {
+        // Get all users with active plans
+        const usersWithPlans = await User.find({
+            activePlan: { $ne: null },
+            'planSubscription.isActive': true
+        }).populate('activePlan');
+
+        // Count eligible users (those with available quota)
+        let eligibleCount = 0;
+        let totalQuotaAvailable = 0;
+
+        for (const user of usersWithPlans) {
+            const planLimit = user.activePlan.leadsPerMonth || 0;
+            const quotaConsumed = user.leadQuota?.consumed || 0;
+            const isUnlimited = planLimit === 0;
+
+            if (isUnlimited || quotaConsumed < planLimit) {
+                eligibleCount++;
+                totalQuotaAvailable += isUnlimited ? 999999 : (planLimit - quotaConsumed);
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                totalUsersWithPlans: usersWithPlans.length,
+                eligibleUsers: eligibleCount,
+                ineligibleUsers: usersWithPlans.length - eligibleCount,
+                totalQuotaAvailable: totalQuotaAvailable > 999999 ? "Unlimited" : totalQuotaAvailable
+            }
+        });
+
+    } catch (error) {
+        console.error("❌ Get subscription users count error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch subscription users count",
+            error: error.message
+        });
+    }
+};
+
+/**
  * 🔹 ADMIN → VIEW ALL LEADS
  * GET /api/admin/leads
  * Query: ?status=NEW&assignedTo=userId&page=1&limit=20

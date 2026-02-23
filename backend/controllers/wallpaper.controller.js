@@ -109,13 +109,6 @@ exports.createWallpaper = async (req, res) => {
     try {
         const { title, description } = req.body;
 
-        if (!title) {
-            return res.status(400).json({
-                success: false,
-                message: "Title is required"
-            });
-        }
-
         if (!req.file) {
             return res.status(400).json({
                 success: false,
@@ -127,7 +120,7 @@ exports.createWallpaper = async (req, res) => {
         const uploadResult = await uploadToFirebase(req.file, "wallpapers");
 
         const wallpaper = await Wallpaper.create({
-            title,
+            title: title || "",
             description: description || "",
             image: uploadResult.url,
             fileName: uploadResult.fileName  // Store for deletion later

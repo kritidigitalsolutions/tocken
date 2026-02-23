@@ -43,14 +43,15 @@ const WallpaperManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate required fields
-    if (!formData.title.trim()) {
-      toast.error("Title is required");
+    // For new wallpapers, image must be a File
+    if (!editingId && !formData.image) {
+      toast.error("Image is required");
       return;
     }
 
-    if (!formData.image) {
-      toast.error("Image is required");
+    // For new wallpapers, ensure image is actually a File
+    if (!editingId && formData.image && !(formData.image instanceof File)) {
+      toast.error("Please select a valid image file");
       return;
     }
 
@@ -155,7 +156,7 @@ const WallpaperManagement = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Title *
+                  Title
                 </label>
                 <input
                   type="text"
@@ -163,9 +164,8 @@ const WallpaperManagement = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, title: e.target.value })
                   }
-                  required
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isDark ? 'bg-slate-700 border-slate-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'}`}
-                  placeholder="Enter wallpaper title"
+                  placeholder="Enter wallpaper title (optional)"
                 />
               </div>
 
@@ -191,11 +191,17 @@ const WallpaperManagement = () => {
                 <input
                   type="file"
                   accept="image/*"
+                  required={!editingId}
                   onChange={(e) =>
                     setFormData({ ...formData, image: e.target.files[0] })
                   }
                   className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-slate-700 border-slate-600 text-gray-300' : 'bg-white border-gray-300 text-gray-700'}`}
                 />
+                {editingId && (
+                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                    Leave empty to keep current image
+                  </p>
+                )}
               </div>
 
               <div className="flex gap-2">

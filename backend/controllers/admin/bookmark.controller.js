@@ -6,13 +6,15 @@ exports.getAllBookmarks = async (req, res) => {
   try {
     const { category, page = 1, limit = 20 } = req.query;
 
+    console.log("📚 Fetching bookmarks - Category filter:", category);
+
     // Find all users with bookmarks
     const users = await User.find({ bookmarks: { $exists: true, $ne: [] } })
       .populate({
         path: "bookmarks",
         match: {
           isDeleted: false,
-          ...(category && category !== "All" && { propertyCategory: category })
+          ...(category && category !== "All" && { propertyType: category })
         },
         populate: {
           path: "userId",
@@ -40,6 +42,8 @@ exports.getAllBookmarks = async (req, res) => {
         }
       }
     }
+
+    console.log(`✅ Found ${allBookmarks.length} bookmarks`);
 
     // Get bookmarkedAt from user's bookmark array order (most recent first)
     // Since we don't have a separate bookmark model with timestamp, we'll sort by property creation
@@ -73,7 +77,7 @@ exports.getBookmarkStats = async (req, res) => {
       .populate({
         path: "bookmarks",
         match: { isDeleted: false },
-        select: "propertyCategory listingType"
+        select: "propertyType listingType"
       });
 
     let total = 0;
@@ -85,8 +89,8 @@ exports.getBookmarkStats = async (req, res) => {
         if (property) {
           total++;
           
-          // Count by category
-          const cat = property.propertyCategory || "Unknown";
+          // Count by property type (RESIDENTIAL, COMMERCIAL, etc.)
+          const cat = property.propertyType || "Unknown";
           byCategory[cat] = (byCategory[cat] || 0) + 1;
           
           // Count by listing type

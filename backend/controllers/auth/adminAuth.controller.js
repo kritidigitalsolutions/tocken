@@ -212,10 +212,11 @@ exports.verifyCredentialOtp = async (req, res) => {
  * POST /api/admin/auth/update-credentials
  * Body (email change):    { purpose: "email_change" }
  * Body (password change): { purpose: "password_change", newPassword: "..." }
+ * Body (both):            { purpose: "email_change", newPassword: "..." }
  * Requires: admin JWT
  *
  * - Requires OTP to be verified first (Step 2)
- * - Applies the email or password update
+ * - Applies the email or password update (or both)
  * - Invalidates the OTP record after use
  */
 exports.updateCredentials = async (req, res) => {
@@ -246,25 +247,21 @@ exports.updateCredentials = async (req, res) => {
       return res.status(404).json({ success: false, message: "Admin not found" });
     }
 
+    let emailUpdated = false;
+    let passwordUpdated = false;
+
+    // Handle email change
     if (purpose === "email_change") {
       if (!record.newEmail) {
         return res.status(400).json({ success: false, message: "No new email on record" });
       }
       admin.email = record.newEmail;
-      await admin.save();
-
-      // Cleanup OTP
-      await AdminOTP.findByIdAndDelete(record._id);
-
-      return res.status(200).json({
-        success: true,
-        message: "Email updated successfully",
-        newEmail: admin.email
-      });
+      emailUpdated = true;
     }
 
-    if (purpose === "password_change") {
-      if (!newPassword || newPassword.length < 6) {
+    // Handle password change (can happen with email_change or password_change purpose)
+    if (newPassword) {
+      if (newPassword.length < 6) {
         return res.status(400).json({
           success: false,
           message: "newPassword must be at least 6 characters"
@@ -273,18 +270,38 @@ exports.updateCredentials = async (req, res) => {
 
       const hashed = await bcrypt.hash(newPassword, 12);
       admin.password = hashed;
-      await admin.save();
+      passwordUpdated = true;
+    }
 
-      // Cleanup OTP
-      await AdminOTP.findByIdAndDelete(record._id);
-
-      return res.status(200).json({
-        success: true,
-        message: "Password updated successfully"
+    // If purpose is password_change but no password provided
+    if (purpose === "password_change" && !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "newPassword is required for password change"
       });
     }
 
-    return res.status(400).json({ success: false, message: "Invalid purpose" });
+    // Save admin updates
+    await admin.save();
+
+    // Cleanup OTP
+    await AdminOTP.findByIdAndDelete(record._id);
+
+    // Build response message
+    let message = "";
+    if (emailUpdated && passwordUpdated) {
+      message = "Email and password updated successfully";
+    } else if (emailUpdated) {
+      message = "Email updated successfully";
+    } else if (passwordUpdated) {
+      message = "Password updated successfully";
+    }
+
+    return res.status(200).json({
+      success: true,
+      message,
+      ...(emailUpdated && { newEmail: admin.email })
+    });
 
   } catch (error) {
     console.error("❌ updateCredentials error:", error);

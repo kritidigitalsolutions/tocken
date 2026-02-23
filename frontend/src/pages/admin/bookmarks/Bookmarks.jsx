@@ -15,11 +15,61 @@ const Bookmarks = () => {
 
   const categories = ["All", "RESIDENTIAL", "COMMERCIAL", "PG", "Co-Living", "Plot/Land"];
 
+  // Helper function to get price from property
+  const getPropertyPrice = (property) => {
+    if (!property) return "N/A";
+    
+    // Check pricing object - nested structure
+    if (property.pricing) {
+      // Check rent pricing
+      if (property.pricing.rent?.rentAmount && property.pricing.rent.rentAmount > 0) {
+        return property.pricing.rent.rentAmount.toLocaleString();
+      }
+      if (property.pricing.rent?.leaseAmount && property.pricing.rent.leaseAmount > 0) {
+        return property.pricing.rent.leaseAmount.toLocaleString();
+      }
+      // Check sell pricing
+      if (property.pricing.sell?.expectedPrice && property.pricing.sell.expectedPrice > 0) {
+        return property.pricing.sell.expectedPrice.toLocaleString();
+      }
+      // Check sale price (flat structure)
+      if (property.pricing.salePrice && property.pricing.salePrice > 0) {
+        return property.pricing.salePrice.toLocaleString();
+      }
+    }
+    
+    // Check residential details
+    if (property.residentialDetails?.rentAmount && property.residentialDetails.rentAmount > 0) {
+      return property.residentialDetails.rentAmount.toLocaleString();
+    }
+    
+    // Check commercial details
+    if (property.commercialDetails?.rentAmount && property.commercialDetails.rentAmount > 0) {
+      return property.commercialDetails.rentAmount.toLocaleString();
+    }
+    if (property.commercialDetails?.leaseAmount && property.commercialDetails.leaseAmount > 0) {
+      return property.commercialDetails.leaseAmount.toLocaleString();
+    }
+    
+    // Check PG details
+    if (property.pgDetails?.rentPerBed && property.pgDetails.rentPerBed > 0) {
+      return property.pgDetails.rentPerBed.toLocaleString();
+    }
+    
+    // Check Co-Living details
+    if (property.coLivingDetails?.rentAmount && property.coLivingDetails.rentAmount > 0) {
+      return property.coLivingDetails.rentAmount.toLocaleString();
+    }
+    
+    return "N/A";
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
+      const params = selectedCategory !== "All" ? { category: selectedCategory } : {};
       const [bookmarksRes, statsRes] = await Promise.all([
-        getAllBookmarks({ category: selectedCategory }),
+        getAllBookmarks(params),
         getBookmarkStats()
       ]);
       setBookmarks(bookmarksRes?.data?.bookmarks || []);
@@ -157,17 +207,8 @@ const Bookmarks = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${item.property?.propertyType === "RESIDENTIAL"
-                          ? isDark ? "bg-green-900 text-green-300" : "bg-green-100 text-green-700"
-                          : item.property?.propertyType === "COMMERCIAL"
-                            ? isDark ? "bg-orange-900 text-orange-300" : "bg-orange-100 text-orange-700"
-                            : item.property?.propertyType === "PG"
-                              ? isDark ? "bg-yellow-900 text-yellow-300" : "bg-yellow-100 text-yellow-700"
-                              : item.property?.propertyType === "Co-Living"
-                                ? isDark ? "bg-teal-900 text-teal-300" : "bg-teal-100 text-teal-700"
-                                : isDark ? "bg-rose-900 text-rose-300" : "bg-rose-100 text-rose-700"
-                        }`}>
-                        {item.property?.propertyType || "N/A"}
+                      <span className={`inline-block px-3 py-1 rounded-full text-sm text-center font-medium ${isDark ? 'bg-indigo-900 text-indigo-300' : 'bg-indigo-100 text-indigo-700'}`}>
+                        {item.property?.propertyCategory || "N/A"}
                       </span>
                     </td>
                     <td className={`px-6 py-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -175,7 +216,7 @@ const Bookmarks = () => {
                       <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{item.property?.location?.locality || ""}</div>
                     </td>
                     <td className={`px-6 py-4 font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      ₹{item.property?.pricing?.rentAmount?.toLocaleString() || "N/A"}
+                      ₹{getPropertyPrice(item.property)}
                     </td>
                     <td className="px-6 py-4">
                       <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
