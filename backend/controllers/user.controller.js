@@ -1,6 +1,7 @@
 const User = require("../models/user.model");
 const jwt = require("jsonwebtoken");
 const Property = require("../models/property.model");
+const FilterProperty = require("../models/filterProperty.model");
 const { uploadToFirebase, deleteFromFirebase } = require("../utils/firebaseUpload");
 
 /**
@@ -779,11 +780,8 @@ exports.getRecentlyAddedProperties = async (req, res) => {
 
     console.log("🔍 Fetching recently added properties, limit:", limit);
 
-    // Query - get all active properties with complete data
-    const properties = await Property.find({
-      status: "ACTIVE",
-      isDeleted: false
-    })
+    // Query - get all active properties from filterProperties collection (admin-activated only)
+    const properties = await FilterProperty.find({})
       .populate("userId", "name firstName lastName phone email userType profileImage")
       .sort({ createdAt: -1 }) // Newest first
       .limit(parseInt(limit))
@@ -851,13 +849,11 @@ exports.getMostLikedProperties = async (req, res) => {
 
     console.log("📈 Top bookmarked properties:", sortedProperties);
 
-    // Get complete property details  
+    // Get complete property details from filterProperties (admin-activated only)
     const propertyIds = sortedProperties.map(p => p.propertyId);
 
-    const properties = await Property.find({
-      _id: { $in: propertyIds },
-      status: "ACTIVE",
-      isDeleted: false
+    const properties = await FilterProperty.find({
+      originalPropertyId: { $in: propertyIds }
     })
       .populate("userId", "name firstName lastName phone email userType profileImage")
       .lean();
@@ -867,12 +863,12 @@ exports.getMostLikedProperties = async (req, res) => {
     // Add bookmark count to each property and sort by bookmark count
     const propertiesWithBookmarks = properties
       .map(property => {
-        const bookmarkInfo = sortedProperties.find(p => p.propertyId === property._id.toString());
+        const bookmarkInfo = sortedProperties.find(p => p.propertyId === property.originalPropertyId.toString());
         return {
           ...property, // Spread all property fields
           _bookmarkStats: {
             totalBookmarks: bookmarkInfo?.bookmarkCount || 0,
-            bookmarkRank: sortedProperties.findIndex(p => p.propertyId === property._id.toString()) + 1
+            bookmarkRank: sortedProperties.findIndex(p => p.propertyId === property.originalPropertyId.toString()) + 1
           }
         };
       })

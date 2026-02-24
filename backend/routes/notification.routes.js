@@ -5,7 +5,8 @@ const {
     getMyNotifications,
     getUnreadCount,
     markAsRead,
-    markAllAsRead
+    markAllAsRead,
+    deleteNotification
 } = require("../controllers/notification.controller");
 
 
@@ -25,6 +26,9 @@ router.patch("/read-all", markAllAsRead);
 
 // PATCH /api/notifications/:id/read - Mark single as read
 router.patch("/:id/read", markAsRead);
+
+// DELETE /api/notifications/:id - Delete notification
+router.delete("/:id", deleteNotification);
 
 // 🔐 User must be logged in
 router.post("/fcm-token", isAuth, saveFcmToken);

@@ -21,13 +21,15 @@ const getMyNotifications = async (req, res) => {
         // 1. Specifically for this user, OR
         // 2. For all users (targetUser is null AND targetUserType is ALL), OR
         // 3. For this user's type
+        // Also exclude notifications deleted by this user
         const query = {
             isActive: true,
             $or: [
                 { targetUser: userId },
                 { targetUser: null, targetUserType: "ALL" },
                 { targetUser: null, targetUserType: userType }
-            ]
+            ],
+            "deletedBy.user": { $ne: userId }
         };
 
         const notifications = await Notification.find(query)
@@ -121,7 +123,8 @@ const getUnreadCount = async (req, res) => {
                 { targetUser: userId },
                 { targetUser: null, targetUserType: "ALL" },
                 { targetUser: null, targetUserType: userType }
-            ]
+            ],
+            "deletedBy.user": { $ne: userId }
         };
 
         const notifications = await Notification.find(query).select("_id targetUser isRead readBy");
@@ -227,9 +230,13 @@ const markAllAsRead = async (req, res) => {
         const user = await User.findById(userId).select('userType');
         const userType = user?.userType || 'INDIVIDUAL';
 
-        // Update single user notifications
+        // Update single user notifications (exclude already deleted)
         await Notification.updateMany(
-            { targetUser: userId, isRead: false },
+            { 
+                targetUser: userId, 
+                isRead: false,
+                isActive: true
+            },
             { isRead: true, readAt: new Date() }
         );
 
@@ -241,7 +248,8 @@ const markAllAsRead = async (req, res) => {
                 { targetUserType: "ALL" },
                 { targetUserType: userType }
             ],
-            "readBy.user": { $ne: userId }
+            "readBy.user": { $ne: userId },
+            "deletedBy.user": { $ne: userId }
         });
 
         for (const notification of broadcastNotifications) {
@@ -266,9 +274,74 @@ const markAllAsRead = async (req, res) => {
     }
 };
 
+/**
+ * Delete notification
+ * DELETE /api/notifications/:id
+ */
+const deleteNotification = async (req, res) => {
+    try {
+        const userId = new mongoose.Types.ObjectId(req.user.id);
+        const notificationId = req.params.id;
+
+        const notification = await Notification.findById(notificationId);
+
+        if (!notification) {
+            return res.status(404).json({
+                success: false,
+                message: "Notification not found"
+            });
+        }
+
+        if (notification.targetUser) {
+            // Single user notification - verify ownership and delete
+            if (notification.targetUser.toString() !== userId.toString()) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Not authorized to delete this notification"
+                });
+            }
+            
+            // Soft delete by marking as inactive
+            notification.isActive = false;
+            await notification.save();
+        } else {
+            // Broadcast notification - add to deletedBy array
+            const alreadyDeleted = notification.deletedBy.some(
+                d => d.user.toString() === userId.toString()
+            );
+
+            if (alreadyDeleted) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Notification already deleted"
+                });
+            }
+
+            notification.deletedBy.push({
+                user: userId,
+                deletedAt: new Date()
+            });
+            await notification.save();
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Notification deleted successfully"
+        });
+    } catch (error) {
+        console.error("Delete notification error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to delete notification",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     getMyNotifications,
     getUnreadCount,
     markAsRead,
-    markAllAsRead
+    markAllAsRead,
+    deleteNotification
 };

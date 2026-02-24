@@ -13,7 +13,11 @@ exports.getAllFeedbacks = async (req, res) => {
 
     const [feedbacks, total] = await Promise.all([
       Feedback.find(filter)
-        .populate("userId", "name phone")
+        .populate({
+          path: "userId",
+          select: "name phone",
+          options: { strictPopulate: false } // Don't filter out if user doesn't exist
+        })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit))

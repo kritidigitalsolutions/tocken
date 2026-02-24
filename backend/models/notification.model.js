@@ -45,6 +45,18 @@ const notificationSchema = new mongoose.Schema(
             }
         }],
 
+        // Track who has deleted this notification (for broadcast notifications)
+        deletedBy: [{
+            user: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User"
+            },
+            deletedAt: {
+                type: Date,
+                default: Date.now
+            }
+        }],
+
         // For single user notifications
         isRead: {
             type: Boolean,

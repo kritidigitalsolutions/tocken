@@ -1,5 +1,6 @@
 ﻿const User = require("../../models/user.model");
 const Property = require("../../models/property.model");
+const FilterProperty = require("../../models/filterProperty.model");
 const Lead = require("../../models/lead.model");
 const Plan = require("../../models/plans.model");
 const Notification = require("../../models/notification.model");
@@ -224,10 +225,14 @@ exports.getDashboardAnalytics = async (req, res) => {
         .sort({ createdAt: -1 })
         .limit(10),
 
-      // Recent properties
-      Property.find({ createdAt: { $gte: startDate }, isDeleted: false })
-        .populate("userId", "name")
-        .select("propertyCategory location.city listingType status createdAt")
+      // Recent properties (from filterProperties - admin-activated only)
+      FilterProperty.find({ createdAt: { $gte: startDate } })
+        .populate({
+          path: "userId",
+          select: "name",
+          options: { strictPopulate: false } // Don't filter out if user doesn't exist
+        })
+        .select("propertyCategory location.city listingType createdAt")
         .sort({ createdAt: -1 })
         .limit(5),
 
