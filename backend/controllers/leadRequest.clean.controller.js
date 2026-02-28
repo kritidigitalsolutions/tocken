@@ -57,12 +57,12 @@ exports.requestLead = async (req, res) => {
             status: "PENDING"
         });
 
-        if (existingRequest) {
-            return res.status(400).json({
-                success: false,
-                message: "You already have a pending lead request. Please wait for admin approval."
-            });
-        }
+        // if (existingRequest) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: "You already have a pending lead request. Please wait for admin approval."
+        //     });
+        // }
 
         // 🔹 Create lead request entry
         const leadRequest = await LeadRequest.create({

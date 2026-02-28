@@ -105,20 +105,20 @@ app.post("/test", (req, res) => {
 
 
 // this is for first time add new admin data
-// const bcrypt = require("bcryptjs");
-// const Admin = require("./models/admin.model");
-// const createAdmin = async () => {
-//   const hashedPassword = await bcrypt.hash("admin123", 10);
+const bcrypt = require("bcryptjs");
+const Admin = require("./models/admin.model");
+const createAdmin = async () => {
+  const hashedPassword = await bcrypt.hash("admin123", 10);
 
-//   await Admin.create({
-//     name: "Super Admin",
-//     email: "admin@realestate.com",
-//     password: hashedPassword
-//   });
+  await Admin.create({
+    name: "Super Admin",
+    email: "admin@realestate.com",
+    password: hashedPassword
+  });
 
-//   console.log("Admin created");
-// };
-// createAdmin().catch(err => console.log("Admin already exists or error:", err.message));
+  console.log("Admin created");
+};
+createAdmin().catch(err => console.log("Admin already exists or error:", err.message));
 
 
 // Public banners (for users - GET only)
@@ -144,7 +144,7 @@ app.use("/api/faqs", faqRoutes);
 // ADMIN FAQs
 app.use("/api/admin/faqs", isAuth, isAdmin, faqAdminRoutes);
 
-// for admin routes and middleware, 
+// for admin Auth routes and middleware, 
 app.use("/api/admin/auth", adminAuthRoutes);
 
 // admin routes / for all admin protected routes like is auth and is admin
