@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchUsers, updateUser, deleteUser, togglePhonePrivacy } from "../../../api/user.api";
 import { getUserProperties, updatePropertyStatus, getPropertyDetails, makePremium, removePremium, deleteProperty } from "../../../api/admin.property.api";
+import { getUserProjects, updateProjectStatus, toggleFeatured as toggleProjectFeatured, deleteProject as deleteProjectAdmin } from "../../../api/admin.project.api";
 import { useTheme } from "../../../context/ThemeContext";
 import Loader from "../../../components/common/Loader";
 import toast, { Toaster } from "react-hot-toast";
@@ -32,6 +33,8 @@ import {
   Image as ImageIcon,
   Key,
   Tag,
+  Star,
+  FolderKanban,
 } from "lucide-react";
 
 const defaultAvatar = "https://www.pngall.com/wp-content/uploads/15/User-PNG-Images-HD.png";
@@ -51,7 +54,7 @@ const Users = () => {
   const [actionLoading, setActionLoading] = useState(false);
 
   // New states for properties view
-  const [viewMode, setViewMode] = useState("details"); // "details" | "properties"
+  const [viewMode, setViewMode] = useState("details"); // "details" | "properties" | "projects"
   const [userProperties, setUserProperties] = useState([]);
   const [propertiesLoading, setPropertiesLoading] = useState(false);
   const [propertiesStats, setPropertiesStats] = useState(null);
@@ -59,6 +62,11 @@ const Users = () => {
   const [propertyDetails, setPropertyDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [propertyModalOpen, setPropertyModalOpen] = useState(false);
+
+  // New states for projects view
+  const [userProjects, setUserProjects] = useState([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [userProjectsStats, setUserProjectsStats] = useState(null);
 
   // User type filter tabs
   const userTypeTabs = [
@@ -145,9 +153,11 @@ const Users = () => {
   // Handle user click
   const handleUserClick = (user) => {
     setSelectedUser(user);
-    // If already in properties view, load new user's properties immediately
     if (viewMode === "properties") {
       loadUserProperties(user._id);
+    }
+    if (viewMode === "projects") {
+      loadUserProjects(user._id);
     }
   };
 
@@ -158,6 +168,8 @@ const Users = () => {
     setUserProperties([]);
     setSelectedProperty(null);
     setPropertyModalOpen(false);
+    setUserProjects([]);
+    setUserProjectsStats(null);
   };
 
   // Load user properties
@@ -181,6 +193,73 @@ const Users = () => {
     if (!selectedUser) return;
     setViewMode("properties");
     await loadUserProperties(selectedUser._id);
+  };
+
+  // Load user projects
+  const loadUserProjects = async (userId) => {
+    try {
+      setProjectsLoading(true);
+      const res = await getUserProjects(userId);
+      setUserProjects(res?.data?.data?.projects || []);
+      setUserProjectsStats(res?.data?.data?.stats || null);
+    } catch (error) {
+      toast.error("Failed to load projects");
+      setUserProjects([]);
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
+
+  // Handle view projects click
+  const handleViewProjects = async () => {
+    if (!selectedUser) return;
+    setViewMode("projects");
+    await loadUserProjects(selectedUser._id);
+  };
+
+  // Handle project status change
+  const handleProjectStatusChange = async (projectId, newStatus) => {
+    setActionLoading(true);
+    try {
+      await updateProjectStatus(projectId, newStatus);
+      const label = newStatus === "ACTIVE" ? "approved" : newStatus === "REJECTED" ? "rejected" : "updated";
+      toast.success(`Project ${label} successfully`);
+      setUserProjects(prev => prev.map(p => p._id === projectId ? { ...p, adminStatus: newStatus } : p));
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to update project status");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle project featured toggle
+  const handleProjectToggleFeatured = async (projectId, currentFeatured) => {
+    setActionLoading(true);
+    try {
+      await toggleProjectFeatured(projectId);
+      toast.success(!currentFeatured ? "Project marked as featured" : "Project removed from featured");
+      setUserProjects(prev => prev.map(p => p._id === projectId ? { ...p, isFeatured: !p.isFeatured } : p));
+    } catch (err) {
+      toast.error("Failed to update featured status");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle project delete
+  const handleProjectDelete = async (projectId, projectName) => {
+    if (!window.confirm(`⚠️ Permanently delete "${projectName}"? This cannot be undone.`)) return;
+    setActionLoading(true);
+    try {
+      await deleteProjectAdmin(projectId);
+      toast.success("Project deleted permanently");
+      setUserProjects(prev => prev.filter(p => p._id !== projectId));
+      setUserProjectsStats(prev => prev ? { ...prev, total: Math.max(0, (prev.total || 1) - 1) } : prev);
+    } catch (err) {
+      toast.error("Failed to delete project");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   // Handle property click - open modal with full details
@@ -679,7 +758,7 @@ const Users = () => {
           {/* Header with Tabs */}
           <div className={`flex items-center justify-between p-4 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
             <div className="flex items-center gap-4">
-              {viewMode === "properties" && (
+              {(viewMode === "properties" || viewMode === "projects") && (
                 <button
                   onClick={() => setViewMode("details")}
                   className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-500'}`}
@@ -688,7 +767,7 @@ const Users = () => {
                 </button>
               )}
               <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                {viewMode === "details" ? "User Details" : `${selectedUser.name}'s Properties`}
+                {viewMode === "details" ? "User Details" : viewMode === "properties" ? `${selectedUser.name}'s Properties` : `${selectedUser.name}'s Projects`}
               </h2>
             </div>
             <button
@@ -727,6 +806,24 @@ const Users = () => {
                   viewMode === "properties" ? "bg-white/20" : isDark ? "bg-slate-600" : "bg-gray-200"
                 }`}>
                   {propertiesStats.total}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={handleViewProjects}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                viewMode === "projects"
+                  ? "bg-indigo-600 text-white"
+                  : isDark ? "bg-slate-700 text-slate-300 hover:bg-slate-600" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              <FolderKanban className="w-4 h-4" />
+              Projects
+              {userProjectsStats?.total > 0 && (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  viewMode === "projects" ? "bg-white/20" : isDark ? "bg-slate-600" : "bg-gray-200"
+                }`}>
+                  {userProjectsStats.total}
                 </span>
               )}
             </button>
@@ -920,6 +1017,15 @@ const Users = () => {
               <Eye className="w-4 h-4" />
               View All Properties
             </button>
+            <button
+              onClick={handleViewProjects}
+              className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition ${
+                isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <FolderKanban className="w-4 h-4" />
+              View All Projects
+            </button>
           </div>
 
               {/* Action Buttons */}
@@ -1074,6 +1180,128 @@ const Users = () => {
                     <p className={`text-sm mt-1 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
                       This user hasn't listed any properties yet
                     </p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* ===== PROJECTS VIEW ===== */}
+          {viewMode === "projects" && (
+            <>
+              {/* Projects Stats */}
+              {userProjectsStats && (
+                <div className={`px-4 py-3 grid grid-cols-4 gap-2 border-b ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="text-center">
+                    <p className={`text-lg font-bold ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{userProjectsStats.total || 0}</p>
+                    <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Total</p>
+                  </div>
+                  <div className="text-center">
+                    <p className={`text-lg font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>{userProjectsStats.active || 0}</p>
+                    <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Active</p>
+                  </div>
+                  <div className="text-center">
+                    <p className={`text-lg font-bold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>{userProjectsStats.pending || 0}</p>
+                    <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Pending</p>
+                  </div>
+                  <div className="text-center">
+                    <p className={`text-lg font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>{userProjectsStats.rejected || 0}</p>
+                    <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Rejected</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Projects List */}
+              <div className="flex-1 overflow-y-auto">
+                {projectsLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+                  </div>
+                ) : userProjects.length > 0 ? (
+                  <div className={`divide-y ${isDark ? 'divide-slate-700/50' : 'divide-gray-200'}`}>
+                    {userProjects.map((project) => {
+                      const statusColor = {
+                        ACTIVE: "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400",
+                        PENDING: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400",
+                        REJECTED: "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400",
+                      }[project.adminStatus] || "bg-gray-100 text-gray-600";
+                      return (
+                        <div key={project._id} className={`p-4 ${isDark ? 'hover:bg-slate-800/30' : 'hover:bg-gray-50'}`}>
+                          <div className="flex gap-3 mb-3">
+                            <div className={`w-16 h-16 rounded-xl flex-shrink-0 overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
+                              {project.uploadImage?.[0] ? (
+                                <img src={project.uploadImage[0]} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <FolderKanban className={`w-6 h-6 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${statusColor}`}>{project.adminStatus}</span>
+                                {project.isFeatured && (
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400 flex items-center gap-1">
+                                    <Star className="w-3 h-3 fill-current" /> Featured
+                                  </span>
+                                )}
+                              </div>
+                              <p className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{project.nameOfProject}</p>
+                              <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                                {project.projectLocation?.city}{project.projectLocation?.state ? `, ${project.projectLocation.state}` : ""}
+                              </p>
+                              <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{project.projectStatus}</p>
+                            </div>
+                          </div>
+                          {/* Action Buttons */}
+                          <div className="grid grid-cols-4 gap-1.5">
+                            <button
+                              onClick={() => handleProjectStatusChange(project._id, "ACTIVE")}
+                              disabled={actionLoading || project.adminStatus === "ACTIVE"}
+                              className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed transition"
+                            >
+                              <CheckCircle className="w-3 h-3" /> Approve
+                            </button>
+                            <button
+                              onClick={() => handleProjectStatusChange(project._id, "REJECTED")}
+                              disabled={actionLoading || project.adminStatus === "REJECTED"}
+                              className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed transition"
+                            >
+                              <XCircle className="w-3 h-3" /> Reject
+                            </button>
+                            <button
+                              onClick={() => handleProjectToggleFeatured(project._id, project.isFeatured)}
+                              disabled={actionLoading}
+                              className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition ${
+                                project.isFeatured
+                                  ? isDark ? "bg-amber-900/50 text-amber-400 hover:bg-amber-900/80" : "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                                  : isDark ? "bg-slate-700 text-slate-300 hover:bg-slate-600" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                              }`}
+                            >
+                              <Star className={`w-3 h-3 ${project.isFeatured ? "fill-current" : ""}`} />
+                              {project.isFeatured ? "Unfeature" : "Feature"}
+                            </button>
+                            <button
+                              onClick={() => handleProjectDelete(project._id, project.nameOfProject)}
+                              disabled={actionLoading}
+                              className={`flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition ${
+                                isDark ? "bg-red-900/50 text-red-400 hover:bg-red-900/80" : "bg-red-100 text-red-700 hover:bg-red-200"
+                              }`}
+                            >
+                              <Trash2 className="w-3 h-3" /> Delete
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full p-8">
+                    <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
+                      <FolderKanban className={`w-10 h-10 ${isDark ? 'text-slate-600' : 'text-gray-400'}`} />
+                    </div>
+                    <p className={`text-lg font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>No projects found</p>
+                    <p className={`text-sm mt-1 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>This user hasn't posted any projects yet</p>
                   </div>
                 )}
               </div>

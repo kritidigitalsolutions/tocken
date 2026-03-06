@@ -21,7 +21,9 @@ import {
   DollarSign,
   FileBarChart,
   MapPin,
-  Settings
+  Settings,
+  FolderKanban,
+  CreditCard
 } from "lucide-react";
 import clsx from "clsx";
 import { useState } from "react";
@@ -213,9 +215,11 @@ const Sidebar = () => {
         <DashboardDropdown />
         <MenuItem to="/admin/users" icon={Users} label="All Users" />
         <MenuItem to="/admin/properties" icon={Home} label="All Properties" />
+        <MenuItem to="/admin/projects" icon={FolderKanban} label="All Projects" />
         <MenuItem to="/admin/leads" icon={PhoneCall} label="Leads" />
         <MenuItem to="/admin/bookmarks" icon={Bookmark} label="All Bookmarks" />
         <MenuItem to="/admin/plans" icon={Layers} label="Plans" />
+        <MenuItem to="/admin/payments" icon={CreditCard} label="Payments" />
         <MenuItem to="/admin/faqs" icon={HelpCircle} label="FAQs" />
         <MenuItem to="/admin/banners" icon={Image} label="Banners" />
         <MenuItem to="/admin/wallpapers" icon={Wallpaper} label="Wallpapers" />

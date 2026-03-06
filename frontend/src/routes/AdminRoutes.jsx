@@ -11,6 +11,10 @@ import ProtectedRoute from "../components/common/ProtectedRoute";
 // for properties and leads
 import Properties from "../pages/admin/properties/Properties";
 import Leads from "../pages/admin/leads/Leads";
+// for projects
+import Projects from "../pages/admin/projects/Projects";
+// for payments
+import Payments from "../pages/admin/payments/Payments";
 // for bookmarks
 import Bookmarks from "../pages/admin/bookmarks/Bookmarks";
 // for feedbacks
@@ -55,6 +59,8 @@ const AdminRoutes = () => {
         <Route path="banners" element={<Banners />} />
         <Route path="legal" element={<LegalPages />} />
         <Route path="properties" element={<Properties />} />
+        <Route path="projects" element={<Projects />} />
+        <Route path="payments" element={<Payments />} />
         <Route path="leads" element={<Leads />} />
         <Route path="bookmarks" element={<Bookmarks />} />
         <Route path="feedbacks" element={<Feedbacks />} />

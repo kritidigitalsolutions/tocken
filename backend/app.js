@@ -83,6 +83,14 @@ const locationRoutes = require("./routes/location.routes.js");
 const mostPopularCitiesRoutes = require("./routes/mostPopularCities.routes");
 const adminMostPopularCitiesRoutes = require("./routes/admin/mostPopularCities.routes");
 
+// 🏗️ POST PROJECT routes
+const projectRoutes = require("./routes/project.routes");
+const adminProjectRoutes = require("./routes/admin/project.routes");
+
+// 💳 PAYMENT routes
+const paymentRoutes = require("./routes/payment.routes");
+const adminPaymentRoutes = require("./routes/admin/payment.routes");
+
 // cron job
 const cron = require("node-cron");
 
@@ -221,6 +229,18 @@ app.use("/api/most-popular-cities", mostPopularCitiesRoutes);
 
 // admin most popular cities
 app.use("/api/admin/most-popular-cities", isAuth, isAdmin, adminMostPopularCitiesRoutes);
+
+// 🏗️ POST PROJECT  (project data + developer data in one request)
+// public + user (create, update, upload photos, developer profile)
+app.use("/api/projects", projectRoutes);
+// admin (full management)
+app.use("/api/admin/projects", isAuth, isAdmin, adminProjectRoutes);
+
+// 💳 PAYMENT GATEWAY (Razorpay)
+// user: create-order → pay in app → verify
+app.use("/api/payments", paymentRoutes);
+// admin: view all payments + stats
+app.use("/api/admin/payments", isAuth, isAdmin, adminPaymentRoutes);
 
 // Scheduled Tasks
 cron.schedule("0 * * * *", expirePremiumListings); // every hour
