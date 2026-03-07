@@ -391,7 +391,7 @@ const Notifications = () => {
                     {/* <Button onClick={handleSubmit} className="w-full">
                         {selectedNotification ? "Update" : "Send Notification"}
                     </Button> */}
-                    <Button onClick={handleSubmit} className="w-full" disabled={sending}>
+                    <Button onClick={handleSubmit} className="w-auto px-6 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600" disabled={sending}>
                         {sending ? "Sending..." : selectedNotification ? "Update" : "Send Notification"}
                     </Button>
                 </div>

@@ -108,8 +108,8 @@ exports.createOrder = async (req, res) => {
       return res.status(404).json({ success: false, message: "Plan not found or inactive" });
     if (!user)
       return res.status(404).json({ success: false, message: "User not found" });
-    if (plan.userType !== user.userType)
-      return res.status(400).json({ success: false, message: `This plan is for ${plan.userType} users only` });
+    // if (plan.userType !== user.userType)
+    //   return res.status(400).json({ success: false, message: `This plan is for ${plan.userType} users only` });
 
     const amountPaise = Math.round((plan.price || 0) * 100);
     if (amountPaise < 100)
@@ -119,7 +119,7 @@ exports.createOrder = async (req, res) => {
     const merchantOrderId = `ORD_${user._id}_${Date.now()}`;
 
     // Redirect URL — include merchantOrderId so frontend can poll status
-    const redirectUrl = `${process.env.PHONEPE_REDIRECT_URL}?merchantOrderId=${merchantOrderId}`;
+    const redirectUrl = `${process.env.PHONEPE_REDIRECT_URL}/${merchantOrderId}`;
 
     // ── Get PhonePe access token ──
     const token = await getAccessToken();
@@ -136,7 +136,7 @@ exports.createOrder = async (req, res) => {
           message: `Purchase ${plan.planName} plan`,
           merchantUrls: { redirectUrl }
         },
-        metaInfo: {
+        metaInfo:  {
           udf1: user._id.toString(),
           udf2: plan._id.toString(),
           udf3: plan.planName
@@ -245,6 +245,18 @@ exports.checkStatus = async (req, res) => {
       payment.status               = "SUCCESS";
       await payment.save();
 
+      console.log("\n✅ PAYMENT SUCCESSFUL (checkStatus)");
+      console.log("─────────────────────────────────────────");
+      console.log("Merchant Order ID  :", merchantOrderId);
+      console.log("PhonePe Order ID   :", ppStatus.orderId);
+      console.log("Transaction ID     :", payment.phonepeTransactionId);
+      console.log("User ID            :", payment.user);
+      console.log("Plan               :", plan.planName);
+      console.log("Amount (paise)     :", payment.amount, `(₹${payment.amount / 100})`);
+      console.log("Plan Valid Until   :", endDate.toLocaleString("en-IN"));
+      console.log("PhonePe Response   :", JSON.stringify(ppStatus, null, 2));
+      console.log("─────────────────────────────────────────\n");
+
       return res.json({
         success: true,
         message: "Payment successful! Plan activated.",
@@ -322,6 +334,16 @@ exports.webhook = async (req, res) => {
       payment.status        = "SUCCESS";
       payment.gatewayResponse = event;
       await payment.save();
+
+      console.log("\n✅ PAYMENT SUCCESSFUL (webhook)");
+      console.log("─────────────────────────────────────────");
+      console.log("Merchant Order ID  :", merchantOrderId);
+      console.log("User ID            :", payment.user);
+      console.log("Plan               :", plan.planName);
+      console.log("Amount (paise)     :", payment.amount, `(₹${payment.amount / 100})`);
+      console.log("Plan Valid Until   :", endDate.toLocaleString("en-IN"));
+      console.log("Webhook Payload    :", JSON.stringify(event, null, 2));
+      console.log("─────────────────────────────────────────\n");
     }
 
     if (state === "FAILED" || state === "CANCELLED") {

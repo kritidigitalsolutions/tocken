@@ -1,6 +1,6 @@
 ﻿const Project   = require("../models/project.model");
 const Developer = require("../models/developer.model");
-const { uploadToFirebase, uploadMultipleToFirebase, deleteFromFirebase } = require("../utils/firebaseUpload");
+const { uploadToFirebase, deleteFromFirebase } = require("../utils/firebaseUpload");
 
 // ─────────────────────────────────────────────────────────────
 // Helper – find developer linked to logged-in user (for auth checks)
@@ -214,75 +214,7 @@ exports.updateProject = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// 3  Upload Main / Cover Image  (goes into uploadImage[0])
-// ─────────────────────────────────────────────────────────────
-exports.uploadMainImage = async (req, res) => {
-  try {
-    const developer = await getDeveloperForUser(req.user.id);
-    if (!developer)
-      return res.status(403).json({ success: false, message: "Developer profile not found." });
-
-    const project = await Project.findById(req.params.id);
-    if (!project) return res.status(404).json({ success: false, message: "Project not found" });
-    if (project.developer.toString() !== developer._id.toString())
-      return res.status(403).json({ success: false, message: "Not authorized" });
-    if (!req.file) return res.status(400).json({ success: false, message: "No file provided" });
-
-    // Delete old main image from Firebase if exists
-    if (project.mainImageFileName) {
-      try { await deleteFromFirebase(project.mainImageFileName); } catch (e) { /* ignore */ }
-    }
-
-    const uploaded = await uploadToFirebase(req.file, "projects/main");
-    // Replace / set index 0 as main cover image
-    if (project.uploadImage.length > 0) {
-      project.uploadImage[0] = uploaded.url;
-    } else {
-      project.uploadImage.push(uploaded.url);
-    }
-    project.mainImageFileName = uploaded.fileName;
-    await project.save();
-
-    res.json({ success: true, message: "Main image uploaded", data: { uploadImage: project.uploadImage } });
-  } catch (error) {
-    console.error("ERROR UPLOADING MAIN IMAGE:", error);
-    res.status(500).json({ success: false, message: "Failed to upload image", error: error.message });
-  }
-};
-
-// ─────────────────────────────────────────────────────────────
-// 4  Upload Other / Gallery Images (max 20, goes into otherImages)
-// ─────────────────────────────────────────────────────────────
-exports.uploadGallery = async (req, res) => {
-  try {
-    const developer = await getDeveloperForUser(req.user.id);
-    if (!developer)
-      return res.status(403).json({ success: false, message: "Developer profile not found." });
-
-    const project = await Project.findById(req.params.id);
-    if (!project) return res.status(404).json({ success: false, message: "Project not found" });
-    if (project.developer.toString() !== developer._id.toString())
-      return res.status(403).json({ success: false, message: "Not authorized" });
-    if (!req.files || req.files.length === 0)
-      return res.status(400).json({ success: false, message: "No files provided" });
-
-    const MAX = 20;
-    if ((project.otherImages || []).length + req.files.length > MAX)
-      return res.status(400).json({ success: false, message: `Max ${MAX} other images allowed.` });
-
-    const uploaded = await uploadMultipleToFirebase(req.files, "projects/gallery");
-    uploaded.forEach(u => project.otherImages.push(u.url));
-    await project.save();
-
-    res.json({ success: true, message: "Images uploaded", data: { otherImages: project.otherImages } });
-  } catch (error) {
-    console.error("ERROR UPLOADING GALLERY:", error);
-    res.status(500).json({ success: false, message: "Failed to upload images", error: error.message });
-  }
-};
-
-// ─────────────────────────────────────────────────────────────
-// 5  Delete Gallery Image  (from otherImages by index)
+// 3  Delete Gallery Image  (from otherImages by index)
 // ─────────────────────────────────────────────────────────────
 exports.deleteGalleryImage = async (req, res) => {
   try {
@@ -310,74 +242,7 @@ exports.deleteGalleryImage = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// 6  Upload eBrochure (PDF)
-// ─────────────────────────────────────────────────────────────
-exports.uploadBrochure = async (req, res) => {
-  try {
-    const developer = await getDeveloperForUser(req.user.id);
-    if (!developer)
-      return res.status(403).json({ success: false, message: "Developer profile not found." });
-
-    const project = await Project.findById(req.params.id);
-    if (!project) return res.status(404).json({ success: false, message: "Project not found" });
-    if (project.developer.toString() !== developer._id.toString())
-      return res.status(403).json({ success: false, message: "Not authorized" });
-    if (!req.file) return res.status(400).json({ success: false, message: "No file provided" });
-
-    const uploaded = await uploadToFirebase(req.file, "projects/brochures");
-    project.eBrochure = uploaded.url;
-    await project.save();
-
-    res.json({ success: true, message: "eBrochure uploaded", data: { eBrochure: project.eBrochure } });
-  } catch (error) {
-    console.error("ERROR UPLOADING BROCHURE:", error);
-    res.status(500).json({ success: false, message: "Failed to upload brochure", error: error.message });
-  }
-};
-
-// ─────────────────────────────────────────────────────────────
-// 6b  Upload Floor Plan for a configuration type
-//     POST /api/projects/:id/floor-plan/:configType
-//     configType = URL-encoded type string (e.g. "2BHK", "3BHK Duplex")
-// ─────────────────────────────────────────────────────────────
-exports.uploadFloorPlan = async (req, res) => {
-  try {
-    const developer = await getDeveloperForUser(req.user.id);
-    if (!developer)
-      return res.status(403).json({ success: false, message: "Developer profile not found." });
-
-    const project = await Project.findById(req.params.id);
-    if (!project) return res.status(404).json({ success: false, message: "Project not found" });
-    if (project.developer.toString() !== developer._id.toString())
-      return res.status(403).json({ success: false, message: "Not authorized" });
-    if (!req.file && (!req.files || req.files.length === 0))
-      return res.status(400).json({ success: false, message: "No file provided" });
-
-    const file = req.file || req.files[0];
-    const configType = decodeURIComponent(req.params.configType);
-    const item = project.projectConfiguration.find(c => c.type === configType);
-    if (!item)
-      return res.status(404).json({ success: false, message: `Configuration type "${configType}" not found in this project` });
-
-    const uploaded = await uploadToFirebase(file, "projects/floor-plans");
-    item.details = item.details || {};
-    item.details.floorPlanFile = uploaded.url;
-    project.markModified("projectConfiguration");
-    await project.save();
-
-    res.json({
-      success: true,
-      message: `Floor plan uploaded for "${configType}"`,
-      data: { configType, floorPlanFile: uploaded.url }
-    });
-  } catch (error) {
-    console.error("ERROR UPLOADING FLOOR PLAN:", error);
-    res.status(500).json({ success: false, message: "Failed to upload floor plan", error: error.message });
-  }
-};
-
-// ─────────────────────────────────────────────────────────────
-// 6c  Unified Upload  — PATCH /:id/uploads
+// 4  Unified Upload  — PATCH /:id/uploads
 //     Single endpoint for ALL project file uploads.
 //     Send any combination of fields:
 //       mainImage  → replaces cover image
@@ -503,7 +368,7 @@ exports.getMyProjects = async (req, res) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit))
-        .populate("developer", "nameOfBusiness nameOfAuthorisedPerson logo mobileNo email websiteLink reraNo isApproved")
+        .populate("developer", "-__v")
         .select("-__v"),
       Project.countDocuments(filter)
     ]);
@@ -574,7 +439,7 @@ exports.getAllProjects = async (req, res) => {
       Project.find(filter)
         .sort({ isFeatured: -1, createdAt: -1 })
         .skip(skip).limit(parseInt(limit))
-        .populate("developer", "nameOfBusiness nameOfAuthorisedPerson logo")
+        .populate("developer", "-__v")
         .select("-__v"),
       Project.countDocuments(filter)
     ]);

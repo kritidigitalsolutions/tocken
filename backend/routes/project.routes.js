@@ -2,7 +2,7 @@ const express = require("express");
 const router  = express.Router();
 const c      = require("../controllers/project.controller");  // single controller
 const auth   = require("../middleware/auth.middleware");
-const upload    = require("../middleware/multer.middleware");
+// const upload    = require("../middleware/multer.middleware");
 const uploadDoc = require("../middleware/multer.middleware").uploadDoc;
 
 // ════════════════════════════════════════════════════════════
@@ -16,11 +16,11 @@ router.get("/:id", c.getProjectById);    // single project detail
 //  PUT  /developer/me         → update text/JSON data
 //  PATCH /developer/me/uploads → upload files (logo | panDocument | reraCertificate | gstCertificate)
 // ════════════════════════════════════════════════════════════
-router.get("/developer/me",           auth, c.getMyDeveloperProfile);
-router.put("/developer/me",           auth, c.updateMyDeveloperProfile);
+router.get("/developer/me", auth, c.getMyDeveloperProfile);
+router.patch("/developer/me", auth, c.updateMyDeveloperProfile);
 router.patch("/developer/me/uploads", auth, uploadDoc.any(), c.uploadDeveloperFiles);
 
-// ════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════x
 //  MY PROJECTS  — /api/projects/user/my
 // ════════════════════════════════════════════════════════════
 router.get("/user/my", auth, c.getMyProjects);
