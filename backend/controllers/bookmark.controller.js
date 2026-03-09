@@ -49,7 +49,11 @@ exports.getBookmarks = async (req, res) => {
       })
       .populate({
         path: "projectBookmarks",
-        select: "-__v"
+        select: "-__v",
+        populate: {
+          path: "developer",
+          select: "-__v"
+        }
       });
 
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
