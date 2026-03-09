@@ -45,16 +45,17 @@ async function processProjectFiles(files, project, configType) {
   for (const file of (files || [])) {
     const fn = file.fieldname;
 
-    if (fn === "mainImage") {
-      if (project.mainImageFileName) {
-        try { await deleteFromFirebase(project.mainImageFileName); } catch (e) {}
-      }
-      const u = await uploadToFirebase(file, "projects/main");
-      if (project.uploadImage.length > 0) project.uploadImage[0] = u.url;
-      else project.uploadImage.push(u.url);
-      project.mainImageFileName = u.fileName;
+    // if (fn === "mainImage") {
+    //   if (project.mainImageFileName) {
+    //     try { await deleteFromFirebase(project.mainImageFileName); } catch (e) {}
+    //   }
+    //   const u = await uploadToFirebase(file, "projects/main");
+    //   if (project.uploadImage.length > 0) project.uploadImage[0] = u.url;
+    //   else project.uploadImage.push(u.url);
+    //   project.mainImageFileName = u.fileName;
 
-    } else if (fn === "gallery") {
+    // } else if (fn === "gallery") {
+    if (fn === "gallery") {
       if ((project.otherImages || []).length < 20) {
         const u = await uploadToFirebase(file, "projects/gallery");
         project.otherImages.push(u.url);
@@ -271,19 +272,19 @@ exports.handleProjectUploads = async (req, res) => {
       const fn = file.fieldname;
 
       // ── Cover / Main Image ──
-      if (fn === "mainImage") {
-        if (project.mainImageFileName) {
-          try { await deleteFromFirebase(project.mainImageFileName); } catch (e) { /* ignore */ }
-        }
-        const uploaded = await uploadToFirebase(file, "projects/main");
-        if (project.uploadImage.length > 0) project.uploadImage[0] = uploaded.url;
-        else project.uploadImage.push(uploaded.url);
-        project.mainImageFileName = uploaded.fileName;
-        results.mainImage = uploaded.url;
-      }
+      // if (fn === "mainImage") {
+      //   if (project.mainImageFileName) {
+      //     try { await deleteFromFirebase(project.mainImageFileName); } catch (e) { /* ignore */ }
+      //   }
+      //   const uploaded = await uploadToFirebase(file, "projects/main");
+      //   if (project.uploadImage.length > 0) project.uploadImage[0] = uploaded.url;
+      //   else project.uploadImage.push(uploaded.url);
+      //   // project.mainImageFileName = uploaded.fileName;
+      //   // results.mainImage = uploaded.url;
+      // }
 
       // ── Gallery Images ──
-      else if (fn === "gallery") {
+      if (fn === "gallery") {
         const MAX = 20;
         if ((project.otherImages || []).length >= MAX)
           return res.status(400).json({ success: false, message: `Max ${MAX} gallery images reached` });
@@ -470,9 +471,9 @@ exports.deleteProject = async (req, res) => {
     if (project.adminStatus !== "PENDING")
       return res.status(400).json({ success: false, message: "Only PENDING projects can be deleted. Contact admin." });
 
-    if (project.mainImageFileName) {
-      try { await deleteFromFirebase(project.mainImageFileName); } catch (e) { /* ignore */ }
-    }
+    // if (project.mainImageFileName) {
+    //   try { await deleteFromFirebase(project.mainImageFileName); } catch (e) { /* ignore */ }
+    // }
 
     await project.deleteOne();
     res.json({ success: true, message: "Project deleted" });

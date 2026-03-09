@@ -192,7 +192,7 @@ app.use("/api/admin/leads", adminCleanLeadRoutes);
 // app.use("/api/admin/lead-requests", isAuth, isAdmin, adminLeadRequestRoutes);
 
 // user bookmarks/favorites
-app.use("/api/bookmarks", bookmarkRoutes);
+app.use("/api/bookmarks", bookmarkRoutes); 
 
 // admin bookmarks
 app.use("/api/admin/bookmarks", isAuth, isAdmin, adminBookmarkRoutes);

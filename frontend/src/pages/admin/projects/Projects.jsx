@@ -867,7 +867,7 @@ const Projects = () => {
                   </h4>
                   <div className="grid grid-cols-3 gap-2">
                     {/* Main / Cover Images */}
-                    {projectDetails.uploadImage?.map((url, i) => (
+                    {/* {projectDetails.uploadImage?.map((url, i) => (
                       <a key={`main-${i}`} href={url} target="_blank" rel="noreferrer" className="relative aspect-square rounded-xl overflow-hidden block group">
                         <img src={url} alt={`main-${i}`} className="w-full h-full object-cover transition group-hover:brightness-90" onError={e => { e.target.style.display = "none"; }} />
                         {i === 0 && (
@@ -877,7 +877,7 @@ const Projects = () => {
                           <ExternalLink className="w-5 h-5 text-white" />
                         </div>
                       </a>
-                    ))}
+                    ))} */}
                     {/* Other / Gallery Images */}
                     {projectDetails.otherImages?.map((url, i) => (
                       <a key={`other-${i}`} href={url} target="_blank" rel="noreferrer" className="relative aspect-square rounded-xl overflow-hidden block group">

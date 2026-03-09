@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "../../../context/ThemeContext";
-import { Users, TrendingUp, UserPlus, UserCheck, Activity } from "lucide-react";
+import { Users, TrendingUp, UserPlus, UserCheck, Activity, Building2 } from "lucide-react";
 import { getDashboardAnalytics } from "../../../api/admin.dashboard.api";
 
 const UserAnalytics = () => {
@@ -213,6 +213,69 @@ const UserAnalytics = () => {
               No recent activity data available
             </p>
           )}
+        </div>
+      </div>
+
+      {/* Project Summary Card */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
+          <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <Building2 className="text-indigo-500" size={20} />
+            Project Overview
+          </h3>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Total Projects</span>
+              <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{userStats?.projects?.total || 0}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Active Projects</span>
+              <span className={`font-bold text-green-500`}>{userStats?.projects?.active || 0}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Pending Review</span>
+              <span className={`font-bold text-yellow-500`}>{userStats?.projects?.pending || 0}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Featured</span>
+              <span className={`font-bold text-indigo-500`}>{userStats?.projects?.featured || 0}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Project Monthly Growth */}
+        <div className={`rounded-2xl p-6 border lg:col-span-2 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
+          <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <TrendingUp className="text-indigo-500" size={20} />
+            Project Monthly Growth
+          </h3>
+          <div className="space-y-3">
+            {(userStats?.projects?.monthlyGrowth && userStats.projects.monthlyGrowth.length > 0) ? (
+              userStats.projects.monthlyGrowth.map((item, idx, arr) => {
+                const prevCount = idx > 0 ? arr[idx - 1].count : 0;
+                const growthPct = prevCount > 0 ? (((item.count - prevCount) / prevCount) * 100).toFixed(1) : null;
+                return (
+                  <div key={idx} className="flex items-center justify-between">
+                    <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                      {item.month} {item.year}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.count} new projects</span>
+                      {growthPct !== null && (
+                        <span className={`text-sm font-medium ${parseFloat(growthPct) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {parseFloat(growthPct) >= 0 ? '+' : ''}{growthPct}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className={`text-center py-4 text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                No project growth data available
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>

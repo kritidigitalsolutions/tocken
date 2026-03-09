@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "../../../context/ThemeContext";
-import { DollarSign, TrendingUp, CreditCard, Wallet, BarChart3 } from "lucide-react";
+import { DollarSign, TrendingUp, CreditCard, Wallet, BarChart3, Building2} from "lucide-react";
 import { getDashboardAnalytics } from "../../../api/admin.dashboard.api";
 
 const RevenueAnalytics = () => {
@@ -238,6 +238,32 @@ const RevenueAnalytics = () => {
               No recent subscription data available
             </p>
           )}
+        </div>
+      </div>
+
+      {/* Project KPIs */}
+      <div className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} shadow-sm`}>
+        <h3 className={`text-lg font-semibold mb-5 flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          <Building2 className="text-indigo-500" size={20} />
+          Project Statistics
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="text-center">
+            <div className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{revenueData?.projects?.total || 0}</div>
+            <div className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>Total Projects</div>
+          </div>
+          <div className="text-center">
+            <div className={`text-3xl font-bold text-green-500`}>{revenueData?.projects?.active || 0}</div>
+            <div className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>Active Projects</div>
+          </div>
+          <div className="text-center">
+            <div className={`text-3xl font-bold text-yellow-500`}>{revenueData?.projects?.pending || 0}</div>
+            <div className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>Pending Review</div>
+          </div>
+          <div className="text-center">
+            <div className={`text-3xl font-bold text-indigo-500`}>{revenueData?.projects?.featured || 0}</div>
+            <div className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>Featured</div>
+          </div>
         </div>
       </div>
     </div>

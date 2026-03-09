@@ -11,16 +11,15 @@ const {
 // All routes require authentication
 router.use(isAuth);
 
-// GET all bookmarks (with optional ?category=RESIDENTIAL filter)
+// ── UNIFIED BOOKMARK ROUTES ─────────────────────────────────
+// GET    /bookmarks              → get all bookmarks (property + project)
+// POST   /bookmarks/:type/:id    → add bookmark      (type = property | project)
+// DELETE /bookmarks/:type/:id    → remove bookmark
+// GET    /bookmarks/:type/:id/check → check if bookmarked
+
 router.get("/", getBookmarks);
-
-// ADD bookmark
-router.post("/:propertyId", addBookmark);
-
-// REMOVE bookmark
-router.delete("/:propertyId", removeBookmark);
-
-// CHECK if property is bookmarked
-router.get("/:propertyId/check", checkBookmark);
+router.post("/:type/:id", addBookmark);
+router.delete("/:type/:id", removeBookmark);
+router.get("/:type/:id/check", checkBookmark);
 
 module.exports = router;

@@ -111,6 +111,12 @@ const userSchema = new mongoose.Schema(
       ref: "Property"
     }],
 
+    // Bookmarked/Favorite projects
+    projectBookmarks: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Project"
+    }],
+
     // for notification
     fcmToken: {
       type: String,

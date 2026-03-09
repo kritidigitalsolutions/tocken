@@ -187,6 +187,7 @@ const ActivityLogs = () => {
               <option value="REJECTED">Rejected</option>
               <option value="DELETED">Deleted</option>
               <option value="LEAD_STATUS">Lead Status</option>
+              <option value="PROJECT">Projects</option>
             </select>
           </div>
         </div>

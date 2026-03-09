@@ -187,7 +187,7 @@ const projectSchema = new mongoose.Schema({
     adminNote:       { type: String, default: null },
 
     // Firebase file-name for cleanup on delete
-    mainImageFileName: { type: String, default: null },
+    // mainImageFileName: { type: String, default: null },
 
     createdAt: {
         type: Date,

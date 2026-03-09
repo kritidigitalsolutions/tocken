@@ -5,6 +5,7 @@ const Lead = require("../../models/lead.model");
 const Plan = require("../../models/plans.model");
 const Notification = require("../../models/notification.model");
 const AuditLog = require("../../models/auditLog.model");
+const Project = require("../../models/project.model");
 require("../../models/admin.model"); // register Admin schema for AuditLog.adminId populate
 
 /**
@@ -60,7 +61,18 @@ exports.getDashboardAnalytics = async (req, res) => {
 
       // ðŸ•’ ACTIVITY BREAKDOWN
       activityByType,
-      hourlyActivityPattern
+      hourlyActivityPattern,
+
+      // ─── PROJECTS ───
+      totalProjects,
+      totalActiveProjects,
+      totalPendingProjects,
+      totalFeaturedProjects,
+      projectsByStatus,
+      projectsByType,
+      topProjectCities,
+      recentProjects,
+      projectMonthlyGrowth
     ] = await Promise.all([
       // Core counts
       User.countDocuments(),
@@ -339,6 +351,52 @@ exports.getDashboardAnalytics = async (req, res) => {
           }
         },
         { $sort: { _id: 1 } }
+      ]),
+
+      // ─── PROJECT STATS ───
+      Project.countDocuments(),
+      Project.countDocuments({ adminStatus: "ACTIVE" }),
+      Project.countDocuments({ adminStatus: "PENDING" }),
+      Project.countDocuments({ isFeatured: true }),
+
+      // Projects by status
+      Project.aggregate([
+        { $group: { _id: "$adminStatus", count: { $sum: 1 } } }
+      ]),
+
+      // Projects by type (each project can have multiple types)
+      Project.aggregate([
+        { $unwind: { path: "$projectType", preserveNullAndEmptyArrays: false } },
+        { $group: { _id: "$projectType", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 10 }
+      ]),
+
+      // Top cities by project count
+      Project.aggregate([
+        { $match: { "projectLocation.city": { $exists: true, $ne: null } } },
+        { $group: { _id: "$projectLocation.city", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 10 }
+      ]),
+
+      // Recent projects
+      Project.find({ createdAt: { $gte: startDate } })
+        .select("nameOfProject projectType adminStatus projectLocation.city isFeatured createdAt")
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean(),
+
+      // Monthly project growth (last 6 months)
+      Project.aggregate([
+        { $match: { createdAt: { $gte: sixMonthsAgo } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } }
       ])
     ]);
 
@@ -402,7 +460,8 @@ exports.getDashboardAnalytics = async (req, res) => {
         totalActiveSubscriptions,
         premiumProperties: premiumPropertiesCount,
         revenue: totalRevenue,
-        transactions: totalTransactions
+        transactions: totalTransactions,
+        totalProjects
       },
 
       // ðŸ’¹ REVENUE ANALYTICS
@@ -517,8 +576,30 @@ exports.getDashboardAnalytics = async (req, res) => {
       period: {
         days: daysAgo,
         startDate,
-        endDate: new Date()
-      }
+        endDate: new Date()      },
+
+      // ðŸ—ï¸ PROJECT ANALYTICS
+      projects: {
+        total: totalProjects,
+        active: totalActiveProjects,
+        pending: totalPendingProjects,
+        featured: totalFeaturedProjects,
+        rejected: projectsByStatus.find(s => s._id === "REJECTED")?.count || 0,
+        blocked: projectsByStatus.find(s => s._id === "BLOCKED")?.count || 0,
+        byStatus: projectsByStatus.reduce((acc, item) => {
+          acc[item._id || "Unknown"] = item.count;
+          return acc;
+        }, {}),
+        byType: projectsByType.map(item => ({
+          name: item._id || "Unknown",
+          value: item.count
+        })),
+        topCities: topProjectCities.map(item => ({
+          name: item._id || "Unknown",
+          value: item.count
+        })),
+        recent: recentProjects,
+        monthlyGrowth: formatMonthlyData(projectMonthlyGrowth)      }
     };
 
     res.status(200).json({

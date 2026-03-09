@@ -4,7 +4,7 @@ import { useTheme } from "../../../context/ThemeContext";
 import {
   Users, Home, PhoneCall, TrendingUp, Activity, DollarSign, Eye, 
   Award, MapPin, Clock, BarChart3, PieChart, 
-  Target, Star, Crown, Bookmark, RefreshCw, Filter
+  Target, Star, Crown, Bookmark, RefreshCw, Filter, Building2, FolderKanban
 } from "lucide-react";
 
 // 📊 Stat Card Component 
@@ -338,6 +338,14 @@ const Dashboard = () => {
             isDark={isDark}
             subtitle={`${visitors?.uniqueVisitors?.toLocaleString()} unique`}
           />
+          <StatCard
+            title="Total Projects"
+            value={analytics?.overview?.totalProjects}
+            icon={Building2}
+            color="indigo"
+            isDark={isDark}
+            subtitle={`${analytics?.projects?.active || 0} active • ${analytics?.projects?.pending || 0} pending`}
+          />
         </div>
       </section>
 
@@ -375,6 +383,21 @@ const Dashboard = () => {
             type="bar"
             isDark={isDark}
           />
+          <ChartCard
+            title="Projects by Status"
+            data={Object.entries(analytics?.projects?.byStatus || {}).map(([key, value]) => ({
+              name: key,
+              value
+            }))}
+            type="bar"
+            isDark={isDark}
+          />
+          <ChartCard
+            title="Projects by Type"
+            data={analytics?.projects?.byType || []}
+            type="bar"
+            isDark={isDark}
+          />
         </div>
       </section>
 
@@ -407,6 +430,12 @@ const Dashboard = () => {
             title="Active Subscriptions"
             data={analytics?.topPerformers?.activeSubscriptions}
             icon={Star}
+            isDark={isDark}
+          />
+          <TopPerformersCard
+            title="Top Project Cities"
+            data={analytics?.projects?.topCities?.slice(0, 5).map(c => ({ _id: c.name, count: c.value }))}
+            icon={Building2}
             isDark={isDark}
           />
         </div>
@@ -492,6 +521,64 @@ const Dashboard = () => {
           </div>
         </div>
       </section>
+
+      {/* Recent Projects */}
+      {analytics?.projects?.recent?.length > 0 && (
+        <section>
+          <h2 className={`text-2xl font-semibold mb-6 flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <Building2 size={24} className="text-indigo-500" />
+            Recent Projects
+          </h2>
+          <div className={`rounded-2xl border backdrop-blur-sm ${isDark ? 'bg-slate-800/50 border-slate-700/50' : 'bg-white/80 border-gray-200 shadow-sm'}`}>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className={`border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
+                    <th className={`text-left px-6 py-4 text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Project Name</th>
+                    <th className={`text-left px-6 py-4 text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Type</th>
+                    <th className={`text-left px-6 py-4 text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>City</th>
+                    <th className={`text-left px-6 py-4 text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Status</th>
+                    <th className={`text-left px-6 py-4 text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Featured</th>
+                    <th className={`text-left px-6 py-4 text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analytics.projects.recent.map((proj, idx) => (
+                    <tr key={proj._id || idx} className={`border-b last:border-0 hover:bg-opacity-50 transition-colors ${isDark ? 'border-slate-700 hover:bg-slate-700/30' : 'border-gray-100 hover:bg-gray-50'}`}>
+                      <td className={`px-6 py-4 font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        <div className="flex items-center gap-2">
+                          <FolderKanban size={16} className="text-indigo-400" />
+                          {proj.nameOfProject || 'N/A'}
+                        </div>
+                      </td>
+                      <td className={`px-6 py-4 text-sm ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
+                        {(Array.isArray(proj.projectType) ? proj.projectType.join(', ') : proj.projectType) || 'N/A'}
+                      </td>
+                      <td className={`px-6 py-4 text-sm ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
+                        {proj.projectLocation?.city || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          proj.adminStatus === 'ACTIVE' ? (isDark ? 'bg-green-900/50 text-green-300' : 'bg-green-100 text-green-800') :
+                          proj.adminStatus === 'PENDING' ? (isDark ? 'bg-yellow-900/50 text-yellow-300' : 'bg-yellow-100 text-yellow-800') :
+                          proj.adminStatus === 'REJECTED' ? (isDark ? 'bg-red-900/50 text-red-300' : 'bg-red-100 text-red-800') :
+                          (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600')
+                        }`}>{proj.adminStatus}</span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {proj.isFeatured ? <Star size={16} className="text-yellow-400 mx-auto" /> : <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>—</span>}
+                      </td>
+                      <td className={`px-6 py-4 text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                        {new Date(proj.createdAt).toLocaleDateString('en-IN')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Revenue Analytics */}
       {analytics?.revenue?.dailyRevenue?.length > 0 && (

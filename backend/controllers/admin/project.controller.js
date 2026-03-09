@@ -221,9 +221,9 @@ exports.deleteProject = async (req, res) => {
     const project = await Project.findById(req.params.id);
     if (!project) return res.status(404).json({ success: false, message: "Project not found" });
 
-    if (project.mainImageFileName) {
-      try { await deleteFromFirebase(project.mainImageFileName); } catch (e) { /* ignore */ }
-    }
+    // if (project.mainImageFileName) {
+    //   try { await deleteFromFirebase(project.mainImageFileName); } catch (e) { /* ignore */ }
+    // }
 
     await logAudit({
       action: "PROJECT_DELETED",

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "../../../context/ThemeContext";
-import { FileBarChart, Download, Calendar, Filter, TrendingUp, FileText, BarChart3, X, Eye } from "lucide-react";
+import { FileBarChart, Download, Calendar, Filter, TrendingUp, FileText, BarChart3, X, Eye, Building2 } from "lucide-react";
 import { getDashboardAnalytics } from "../../../api/admin.dashboard.api";
 
 const Reports = () => {
@@ -84,6 +84,16 @@ const Reports = () => {
       lastGenerated: twoDaysAgo,
       status: "ready",
       data: null
+    },
+    {
+      id: 6,
+      title: "Project Analytics Report",
+      description: "Real estate project listings, status, and growth insights",
+      type: "project",
+      size: "Dynamic",
+      lastGenerated: today,
+      status: "ready",
+      data: null
     }
   ];
 
@@ -104,7 +114,8 @@ const Reports = () => {
         financial: "Financial Report",
         property: "Property Report",
         user: "User Activity Report",
-        leads: "Lead Conversion Report"
+        leads: "Lead Conversion Report",
+        project: "Project Analytics Report"
       };
       
       const reportDescriptions = {
@@ -112,7 +123,8 @@ const Reports = () => {
         financial: "Financial performance and subscription analytics",
         property: "Property performance and market insights",
         user: "User engagement and behavior analysis",
-        leads: "Lead generation and conversion analytics"
+        leads: "Lead generation and conversion analytics",
+        project: "Real estate project listings, status, and growth insights"
       };
       
       const newReport = {
@@ -175,6 +187,25 @@ const Reports = () => {
         csvContent += `Premium Users,${reportData?.overview?.premiumUsers || 0}\n`;
         csvContent += `Free Users,${reportData?.overview?.freeUsers || 0}\n`;
         csvContent += `User Growth,${reportData?.statistics?.userGrowth || 0}%\n`;
+      } else if (report.type === "project") {
+        csvContent += `Project Analytics Report - ${report.lastGenerated}\n\n`;
+        csvContent += `Total Projects,${reportData?.projects?.total || 0}\n`;
+        csvContent += `Active Projects,${reportData?.projects?.active || 0}\n`;
+        csvContent += `Pending Projects,${reportData?.projects?.pending || 0}\n`;
+        csvContent += `Featured Projects,${reportData?.projects?.featured || 0}\n`;
+        csvContent += `Rejected Projects,${reportData?.projects?.rejected || 0}\n`;
+        if (reportData?.projects?.byType?.length > 0) {
+          csvContent += `\nProjects by Type\n`;
+          reportData.projects.byType.forEach(t => {
+            csvContent += `${t.name},${t.value}\n`;
+          });
+        }
+        if (reportData?.projects?.topCities?.length > 0) {
+          csvContent += `\nTop Cities (Projects)\n`;
+          reportData.projects.topCities.forEach(c => {
+            csvContent += `${c.name},${c.value}\n`;
+          });
+        }
       }
       
       // Create and download file
@@ -251,6 +282,7 @@ const Reports = () => {
       case 'property': return FileBarChart;
       case 'user': return FileText;
       case 'leads': return TrendingUp;
+      case 'project': return Building2;
       default: return FileBarChart;
     }
   };
@@ -381,6 +413,7 @@ const Reports = () => {
               <option value="property">Property Report</option>
               <option value="user">User Activity Report</option>
               <option value="leads">Lead Conversion Report</option>
+              <option value="project">Project Analytics Report</option>
             </select>
           </div>
 
@@ -445,6 +478,7 @@ const Reports = () => {
               <option value="property">Property</option>
               <option value="user">User Activity</option>
               <option value="leads">Lead Reports</option>
+              <option value="project">Project Reports</option>
             </select>
           </div>
         </div>
@@ -463,13 +497,15 @@ const Reports = () => {
                     report.type === 'analytics' ? 'bg-blue-500/20' :
                     report.type === 'financial' ? 'bg-green-500/20' :
                     report.type === 'property' ? 'bg-purple-500/20' :
-                    report.type === 'user' ? 'bg-yellow-500/20' : 'bg-indigo-500/20'
+                    report.type === 'user' ? 'bg-yellow-500/20' :
+                    report.type === 'project' ? 'bg-indigo-500/20' : 'bg-indigo-500/20'
                   }`}>
                     <IconComponent className={
                       report.type === 'analytics' ? 'text-blue-500' :
                       report.type === 'financial' ? 'text-green-500' :
                       report.type === 'property' ? 'text-purple-500' :
-                      report.type === 'user' ? 'text-yellow-500' : 'text-indigo-500'
+                      report.type === 'user' ? 'text-yellow-500' :
+                      report.type === 'project' ? 'text-indigo-500' : 'text-indigo-500'
                     } size={24} />
                   </div>
                   
@@ -774,6 +810,39 @@ const Reports = () => {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Project Details */}
+              {selectedReport.type === 'project' && (
+                <div>
+                  <h4 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    🏗️ Project Stats
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    {[
+                      { label: 'Total', value: selectedReport.data?.projects?.total || 0, color: 'text-indigo-500' },
+                      { label: 'Active', value: selectedReport.data?.projects?.active || 0, color: 'text-green-500' },
+                      { label: 'Pending', value: selectedReport.data?.projects?.pending || 0, color: 'text-yellow-500' },
+                      { label: 'Featured', value: selectedReport.data?.projects?.featured || 0, color: 'text-purple-500' },
+                    ].map(item => (
+                      <div key={item.label} className={`p-4 rounded-lg text-center ${isDark ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
+                        <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>{item.label}</p>
+                        <p className={`text-2xl font-bold mt-1 ${item.color}`}>{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {(selectedReport.data?.projects?.byType || []).length > 0 && (
+                    <div className="space-y-2">
+                      <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>By Type:</p>
+                      {selectedReport.data.projects.byType.map((t, idx) => (
+                        <div key={idx} className={`flex justify-between p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
+                          <span className={isDark ? 'text-slate-300' : 'text-gray-700'}>{t.name}</span>
+                          <span className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
