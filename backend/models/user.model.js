@@ -123,20 +123,11 @@ const userSchema = new mongoose.Schema(
       default: null
     },
 
-    // Lead Quota Tracking (for Agents/Owners)
-    leadQuota: {
-      consumed: {
-        type: Number,
-        default: 0
-      },
-      limit: {
-        type: Number,
-        default: 0 // 0 = unlimited
-      },
-      resetDate: {
-        type: Date,
-        default: null
-      }
+    // Unified Plan Usage Quota — shared across leads, property posts & project posts
+    planUsageQuota: {
+      consumed: { type: Number, default: 0 },
+      limit: { type: Number, default: 0 }, // 0 = unlimited
+      resetDate: { type: Date, default: null }
     },
 
 

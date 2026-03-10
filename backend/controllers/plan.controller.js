@@ -77,9 +77,9 @@ exports.buyPlan = async (req, res) => {
           isActive: true,
           autoRenewal: false
         },
-        leadQuota: {
+        planUsageQuota: {
           consumed: 0,
-          limit: plan.leadsPerMonth,
+          limit: plan.planLimit || 0,
           resetDate: quotaResetDate
         }
       },
@@ -96,7 +96,7 @@ exports.buyPlan = async (req, res) => {
           userType: updatedUser.userType,
           activePlan: updatedUser.activePlan,
           planSubscription: updatedUser.planSubscription,
-          leadQuota: updatedUser.leadQuota
+          planUsageQuota: updatedUser.planUsageQuota
         }
       }
     });
@@ -122,7 +122,7 @@ exports.getUserPlan = async (req, res) => {
 
     const user = await User.findById(req.user.id)
       .populate('activePlan')
-      .select('activePlan planSubscription leadQuota userType');
+      .select('activePlan planSubscription planUsageQuota userType');
 
     if (!user) {
       return res.status(404).json({
@@ -140,10 +140,9 @@ exports.getUserPlan = async (req, res) => {
       if (isExpired && user.planSubscription.isActive) {
         await User.findByIdAndUpdate(user._id, {
           'planSubscription.isActive': false,
-          'leadQuota.limit': 0
+          'planUsageQuota.limit': 0
         });
         user.planSubscription.isActive = false;
-        user.leadQuota.limit = 0;
       }
     }
 
@@ -152,7 +151,7 @@ exports.getUserPlan = async (req, res) => {
       data: {
         activePlan: user.activePlan,
         planSubscription: user.planSubscription,
-        leadQuota: user.leadQuota,
+        planUsageQuota: user.planUsageQuota,
         userType: user.userType,
         isExpired,
         hasActivePlan: user.activePlan && user.planSubscription && user.planSubscription.isActive && !isExpired
@@ -168,3 +167,55 @@ exports.getUserPlan = async (req, res) => {
   }
 };
 
+exports.getUserPlanStatus = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: "User is not authenticated"
+      });
+    }
+
+    const user = await User.findById(req.user.id)
+      .populate('activePlan')
+      .select('activePlan planSubscription planUsageQuota userType');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Check if plan is expired
+    let isExpired = false;
+    if (user.planSubscription && user.planSubscription.endDate) {
+      isExpired = new Date() > user.planSubscription.endDate;
+      
+      // If expired, update subscription status
+      if (isExpired && user.planSubscription.isActive) {
+        await User.findByIdAndUpdate(user._id, {
+          'planSubscription.isActive': false,
+          'planUsageQuota.limit': 0
+        });
+        user.planSubscription.isActive = false;
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        userType: user.userType,
+        isExpired,
+        hasActivePlan: user.activePlan && user.planSubscription && user.planSubscription.isActive && !isExpired
+      }
+    });
+
+  } catch (error) {
+    console.error("Get User Plan Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch plan information"
+    });
+  }
+};

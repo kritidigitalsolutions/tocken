@@ -18,7 +18,7 @@ const PlanManagement = () => {
     price: "",
     originalPrice: "",
     validityDays: "",
-    leadsPerMonth: "",
+    planLimit: "",
     tag: "",
     offerEndsInDays: "",
     features: [],
@@ -29,7 +29,7 @@ const PlanManagement = () => {
 
   const userTypes = [
     "AGENT", "SELLER", 
-    "LANDLORD", "PG OWNER", "BUYER", "TENANT", 
+    "LANDLORD", "PG OWNER", "DEVELOPER", "TENANT", 
     "CO-LIVING", "PG SEEKER"
   ];
   const tags = ["Most Popular", "Best Value", "Limited Offer", ""];
@@ -145,7 +145,7 @@ const PlanManagement = () => {
       price: plan.price,
       originalPrice: plan.originalPrice,
       validityDays: plan.validityDays,
-      leadsPerMonth: plan.leadsPerMonth || 0,
+      planLimit: plan.planLimit ?? 0,
       tag: plan.tag || "",
       offerEndsInDays: plan.offerEndsInDays,
       features: plan.features || [],
@@ -178,7 +178,7 @@ const PlanManagement = () => {
       price: "",
       originalPrice: "",
       validityDays: "",
-      leadsPerMonth: "",
+      planLimit: "",
       tag: "",
       offerEndsInDays: "",
       features: [],
@@ -320,23 +320,22 @@ const PlanManagement = () => {
                 />
               </div>
 
-              {/* Leads Per Month */}
+              {/* Plan Limit */}
               <div>
                 <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-                  Leads Per Month *
+                  Plan Limit
                 </label>
                 <input
                   type="number"
-                  name="leadsPerMonth"
-                  value={formData.leadsPerMonth}
+                  name="planLimit"
+                  value={formData.planLimit}
                   onChange={handleInputChange}
                   placeholder="50"
                   min="0"
                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-gray-300'}`}
-                  required
                 />
                 <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>
-                  0 = Unlimited leads
+                  Shared limit for leads received, property posts &amp; project posts. 0 = Unlimited
                 </p>
               </div>
 
@@ -485,7 +484,7 @@ const PlanManagement = () => {
                 )}
               </div>
               <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                {plan.validityDays} days • {plan.leadsPerMonth === 0 ? 'Unlimited' : plan.leadsPerMonth} leads/month
+                {plan.validityDays} days • {plan.planLimit === 0 ? 'Unlimited' : plan.planLimit} uses
               </p>
             </div>
 

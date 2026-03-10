@@ -10,7 +10,7 @@ const planSchema = new mongoose.Schema({
       "SELLER",
       "LANDLORD",
       "PG OWNER",
-      "BUYER",
+      "DEVELOPER",
       "TENANT",
       "CO-LIVING",
       "PG SEEKER"
@@ -37,10 +37,10 @@ const planSchema = new mongoose.Schema({
 
   validityDays: Number,
 
-  // Lead Quota (for Agents/Owners)
-  leadsPerMonth: {
+  // Unified Plan Limit — applies to leads received, property posts & project posts
+  planLimit: {
     type: Number,
-    default: 0 // 0 = unlimited for premium plans, 5 for free, 50 for basic
+    default: 0 // 0 = unlimited
   },
 
   features: [String],

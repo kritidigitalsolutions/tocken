@@ -927,7 +927,9 @@ const Projects = () => {
                     className="w-full border-0"
                     height="200"
                     loading="lazy"
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${projectDetails.projectLocation.longitude - 0.01},${projectDetails.projectLocation.latitude - 0.01},${projectDetails.projectLocation.longitude + 0.01},${projectDetails.projectLocation.latitude + 0.01}&layer=mapnik&marker=${projectDetails.projectLocation.latitude},${projectDetails.projectLocation.longitude}`}
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://maps.google.com/maps?q=${projectDetails.projectLocation.latitude},${projectDetails.projectLocation.longitude}&z=15&output=embed&hl=en`}
                   />
                 </div>
               )}

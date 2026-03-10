@@ -2,12 +2,43 @@ const FilterProperty = require("../models/filterProperty.model");
 const Property = require("../models/property.model"); // For getMyProperties (user's own properties)
 const axios = require("axios");
 
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+
 /**
- * SEARCH LOCATIONS FOR FILTER (OpenStreetMap)
+ * Parse Google Geocoding address_components into a flat object
+ */
+const parseGoogleAddressComponents = (components) => {
+    const result = { city: "", locality: "", state: "", country: "India", pincode: "" };
+    for (const comp of components) {
+        if (comp.types.includes("locality")) {
+            result.city = comp.long_name;
+        } else if (comp.types.includes("administrative_area_level_3") && !result.city) {
+            result.city = comp.long_name;
+        } else if (comp.types.includes("administrative_area_level_2") && !result.city) {
+            result.city = comp.long_name;
+        }
+        if (comp.types.includes("sublocality_level_1") || comp.types.includes("neighborhood")) {
+            result.locality = comp.long_name;
+        }
+        if (comp.types.includes("administrative_area_level_1")) {
+            result.state = comp.long_name;
+        }
+        if (comp.types.includes("country")) {
+            result.country = comp.long_name;
+        }
+        if (comp.types.includes("postal_code")) {
+            result.pincode = comp.long_name;
+        }
+    }
+    return result;
+};
+
+/**
+ * SEARCH LOCATIONS FOR FILTER (Google Maps Geocoding)
  * GET /api/properties/locations?q=kamla+nagar
- * 
+ *
  * This endpoint provides location suggestions for the filter dropdown
- * Uses OpenStreetMap Nominatim API
+ * Uses Google Maps Geocoding API
  */
 exports.searchLocationsForFilter = async (req, res) => {
     try {
@@ -21,22 +52,17 @@ exports.searchLocationsForFilter = async (req, res) => {
         }
 
         const response = await axios.get(
-            "https://nominatim.openstreetmap.org/search",
+            "https://maps.googleapis.com/maps/api/geocode/json",
             {
                 params: {
-                    q: q,
-                    format: "json",
-                    addressdetails: 1,
-                    limit: 10,
-                    countrycodes: countrycode
-                },
-                headers: {
-                    "User-Agent": "TockenApp/1.0 (admin@realestate.com)"
+                    address: q,
+                    components: `country:${countrycode}`,
+                    key: GOOGLE_MAPS_API_KEY
                 }
             }
         );
 
-        if (response.data.length === 0) {
+        if (response.data.status === "ZERO_RESULTS" || !response.data.results?.length) {
             return res.json({
                 success: true,
                 count: 0,
@@ -45,27 +71,20 @@ exports.searchLocationsForFilter = async (req, res) => {
             });
         }
 
-        const locations = response.data.map(item => ({
-            placeId: item.place_id,
-            displayName: item.display_name,
-            city:
-                item.address?.city ||
-                item.address?.town ||
-                item.address?.village ||
-                item.address?.county ||
-                item.address?.state_district ||
-                "",
-            locality:
-                item.address?.suburb ||
-                item.address?.neighbourhood ||
-                item.address?.residential ||
-                "",
-            state: item.address?.state || "",
-            country: item.address?.country || "India",
-            pincode: item.address?.postcode || "",
-            lat: parseFloat(item.lat),
-            lng: parseFloat(item.lon)
-        }));
+        const locations = response.data.results.map(item => {
+            const addr = parseGoogleAddressComponents(item.address_components || []);
+            return {
+                placeId: item.place_id,
+                displayName: item.formatted_address,
+                city: addr.city,
+                locality: addr.locality,
+                state: addr.state,
+                country: addr.country,
+                pincode: addr.pincode,
+                lat: item.geometry.location.lat,
+                lng: item.geometry.location.lng
+            };
+        });
 
         res.json({
             success: true,
@@ -111,7 +130,7 @@ const filterEmptyFromArray = (arr) => {
  * This API supports all filter options from Flutter app:
  * - Rent/Lease, Co-living, PG, Buy, Plot/Land tabs
  * - Property Type, BHK, Budget, Area, Furnish, etc.
- * - OpenStreetMap location search with lat/lng support
+ * - Google Maps location search with lat/lng support
  * 
  * Send filter data in request body (JSON)
  */
@@ -121,12 +140,12 @@ exports.filterProperties = async (req, res) => {
             // Tab selection
             listingType,        // RENT, SELL, Co-Living, PG
 
-            // Location (from OpenStreetMap selection)
+            // Location (from Google Maps selection)
             city,
             locality,
             state,
-            lat,                // Latitude from OpenStreetMap
-            lng,                // Longitude from OpenStreetMap
+            lat,                // Latitude from Google Maps
+            lng,                // Longitude from Google Maps
             radius,             // Radius in km for nearby search
 
             // Property Category
@@ -194,7 +213,7 @@ exports.filterProperties = async (req, res) => {
             query.listingType = listingType;
         }
 
-        // ===== LOCATION FILTER (Text-based + OpenStreetMap) =====
+        // ===== LOCATION FILTER (Text-based + Google Maps) =====
         let locationData = null;
 
         // If lat/lng provided directly, use coordinate-based search WITH text fallback
@@ -240,43 +259,39 @@ exports.filterProperties = async (req, res) => {
                 query["location.locality"] = { $regex: locality, $options: "i" };
             }
 
-            // Still fetch from OpenStreetMap for location info display
+            // Still fetch from Google Maps Geocoding for location info display
             const searchQuery = locality ? `${locality}, ${city || ""}, India` : `${city}, India`;
             try {
-                const osmResponse = await axios.get(
-                    "https://nominatim.openstreetmap.org/search",
+                const gmapsResponse = await axios.get(
+                    "https://maps.googleapis.com/maps/api/geocode/json",
                     {
                         params: {
-                            q: searchQuery,
-                            format: "json",
-                            addressdetails: 1,
-                            limit: 1,
-                            countrycodes: "in"
-                        },
-                        headers: {
-                            "User-Agent": "TockenApp/1.0 (admin@realestate.com)"
+                            address: searchQuery,
+                            components: "country:in",
+                            key: GOOGLE_MAPS_API_KEY
                         }
                     }
                 );
 
-                if (osmResponse.data && osmResponse.data.length > 0) {
-                    const location = osmResponse.data[0];
+                if (gmapsResponse.data.status === "OK" && gmapsResponse.data.results?.length > 0) {
+                    const result = gmapsResponse.data.results[0];
+                    const addr = parseGoogleAddressComponents(result.address_components || []);
                     locationData = {
                         searchQuery,
-                        displayName: location.display_name,
-                        city: location.address?.city || location.address?.town || location.address?.state_district || city,
-                        locality: location.address?.suburb || location.address?.neighbourhood || locality || "",
-                        state: location.address?.state || "",
-                        lat: parseFloat(location.lat),
-                        lng: parseFloat(location.lon),
-                        source: "openstreetmap_text_search"
+                        displayName: result.formatted_address,
+                        city: addr.city || city,
+                        locality: addr.locality || locality || "",
+                        state: addr.state || "",
+                        lat: result.geometry.location.lat,
+                        lng: result.geometry.location.lng,
+                        source: "google_maps_text_search"
                     };
                 } else {
                     locationData = { city, locality, source: "text_search" };
                 }
-            } catch (osmError) {
-                console.error("OpenStreetMap API error:", osmError.message);
-                locationData = { city, locality, source: "text_search", error: osmError.message };
+            } catch (gmapsError) {
+                console.error("Google Maps API error:", gmapsError.message);
+                locationData = { city, locality, source: "text_search", error: gmapsError.message };
             }
         }
 
@@ -688,10 +703,10 @@ exports.searchProperties = async (req, res) => {
 };
 
 /**
- * GET NEARBY PROPERTIES (OpenStreetMap Enhanced)
+ * GET NEARBY PROPERTIES (Google Maps Enhanced)
  * GET /api/properties/nearby?lat=28.5&lng=77.2&radius=5
- * 
- * Get properties within radius (km) using OpenStreetMap coordinates
+ *
+ * Get properties within radius (km) using Google Maps coordinates
  * Fetches from FilterProperty collection (only ACTIVE/approved properties)
  */
 exports.getNearbyProperties = async (req, res) => {
@@ -701,7 +716,7 @@ exports.getNearbyProperties = async (req, res) => {
         if (!lat || !lng) {
             return res.status(400).json({
                 success: false,
-                message: "Latitude and longitude are required. Use OpenStreetMap location search to get coordinates."
+                message: "Latitude and longitude are required. Use Google Maps location search to get coordinates."
             });
         }
 
