@@ -391,7 +391,7 @@ const Projects = () => {
                         <div className="flex items-center gap-1 mb-1.5">
                           <MapPin className={`w-3 h-3 flex-shrink-0 ${isDark ? "text-slate-500" : "text-gray-400"}`} />
                           <span className={`text-xs truncate ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-                            {project.projectLocation?.city || "Location not specified"}
+                            {project.projectLocation?.fullAddress || project.projectLocation?.city || "Location not specified"}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
@@ -497,7 +497,7 @@ const Projects = () => {
                     <div className="flex items-center gap-1 mt-1.5">
                       <MapPin className={`w-3.5 h-3.5 flex-shrink-0 ${isDark ? "text-slate-500" : "text-gray-400"}`} />
                       <span className={`text-sm ${isDark ? "text-slate-400" : "text-gray-600"}`}>
-                        {[projectDetails.projectLocation?.city, projectDetails.projectLocation?.state, projectDetails.projectLocation?.country].filter(Boolean).join(", ") || "Not specified"}
+                        {projectDetails.projectLocation?.fullAddress || [projectDetails.projectLocation?.city, projectDetails.projectLocation?.state, projectDetails.projectLocation?.country].filter(Boolean).join(", ") || "Not specified"}
                       </span>
                     </div>
                     <p className={`text-sm font-semibold mt-2 ${isDark ? "text-slate-300" : "text-gray-700"}`}>
@@ -725,6 +725,12 @@ const Projects = () => {
                     </div>
                   ))}
                 </div>
+                {projectDetails.projectLocation?.fullAddress && (
+                  <div className={`mt-2 p-3 rounded-lg ${isDark ? "bg-slate-700/60" : "bg-white border border-gray-100"}`}>
+                    <p className={`text-xs mb-0.5 ${isDark ? "text-slate-500" : "text-gray-400"}`}>Full Address</p>
+                    <p className={`font-medium text-sm ${isDark ? "text-white" : "text-gray-900"}`}>{projectDetails.projectLocation.fullAddress}</p>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   {projectDetails.projectLocation?.city && (
                     <div className={`p-3 rounded-lg ${isDark ? "bg-slate-700/60" : "bg-white border border-gray-100"}`}>

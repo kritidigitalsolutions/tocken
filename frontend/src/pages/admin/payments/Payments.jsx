@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../../context/ThemeContext";
 import {
-  CreditCard, TrendingUp, CheckCircle, Clock, XCircle,
-  RefreshCw, Search, ChevronLeft, ChevronRight, IndianRupee
+  CreditCard, CheckCircle, Clock, XCircle,
+  RefreshCw, Search, ChevronLeft, ChevronRight, IndianRupee, ExternalLink
 } from "lucide-react";
 import { adminGetAllPayments, adminGetPaymentStats } from "../../../api/admin.payment.api";
 import toast from "react-hot-toast";
@@ -40,6 +41,7 @@ const StatCard = ({ icon: Icon, label, value, color, isDark }) => (
 // ────────────────────────────────────────────────────────────
 const Payments = () => {
   const { isDark } = useTheme();
+  const navigate = useNavigate();
 
   const [stats,    setStats]    = useState(null);
   const [payments, setPayments] = useState([]);
@@ -132,34 +134,224 @@ const Payments = () => {
         ) : null}
       </div>
 
-      {/* Monthly Revenue Chart (simple bars) */}
-      {stats?.monthly?.length > 0 && (
-        <div className={`rounded-xl p-6 border mb-8 ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-200 shadow-sm"}`}>
-          <h2 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${isDark ? "text-white" : "text-gray-900"}`}>
-            <TrendingUp size={18} className="text-indigo-500" /> Monthly Revenue
-          </h2>
-          <div className="flex items-end gap-3 h-32">
-            {stats.monthly.map((m) => {
-              const maxRev = Math.max(...stats.monthly.map(x => x.revenue), 1);
-              const pct    = Math.round((m.revenue / maxRev) * 100);
-              return (
-                <div key={m.month} className="flex flex-col items-center gap-1 flex-1">
-                  <span className={`text-xs font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}>
-                    {fmt(m.revenue)}
-                  </span>
-                  <div
-                    className="w-full rounded-t-md bg-indigo-500 transition-all duration-500"
-                    style={{ height: `${Math.max(pct, 4)}%` }}
-                  />
-                  <span className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>
-                    {m.month.slice(5)} {/* MM */}
-                  </span>
+      {/* Monthly Revenue Chart */}
+      {stats?.monthly?.length > 0 && (() => {
+        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const getMonthLabel = (m) => {
+          const parts = m.month.split('-');
+          const idx = parseInt(parts[1], 10) - 1;
+          return monthNames[idx] || m.month.slice(5);
+        };
+
+        const data = stats.monthly;
+        const revenues = data.map(d => d.revenue);
+        const totalMonthlyRev = revenues.reduce((s, v) => s + v, 0);
+        const minRev = Math.min(...revenues);
+        const maxRev = Math.max(...revenues);
+        const range = maxRev - minRev || 1;
+        const padded = { min: minRev - range * 0.15, max: maxRev + range * 0.15 };
+        const valueRange = padded.max - padded.min || 1;
+
+        // Chart dimensions
+        const W = 900, H = 280;
+        const padL = 60, padR = 30, padT = 20, padB = 40;
+        const chartW = W - padL - padR;
+        const chartH = H - padT - padB;
+
+        // Points
+        const points = data.map((d, i) => ({
+          x: padL + (data.length > 1 ? (i / (data.length - 1)) * chartW : chartW / 2),
+          y: padT + chartH - ((d.revenue - padded.min) / valueRange) * chartH,
+          revenue: d.revenue,
+          label: getMonthLabel(d),
+        }));
+
+        // Smooth cubic bezier path
+        const smoothLine = (pts) => {
+          if (pts.length < 2) return `M${pts[0].x},${pts[0].y}`;
+          let d = `M${pts[0].x},${pts[0].y}`;
+          for (let i = 0; i < pts.length - 1; i++) {
+            const p0 = pts[Math.max(i - 1, 0)];
+            const p1 = pts[i];
+            const p2 = pts[i + 1];
+            const p3 = pts[Math.min(i + 2, pts.length - 1)];
+            const tension = 0.3;
+            const cp1x = p1.x + (p2.x - p0.x) * tension;
+            const cp1y = p1.y + (p2.y - p0.y) * tension;
+            const cp2x = p2.x - (p3.x - p1.x) * tension;
+            const cp2y = p2.y - (p3.y - p1.y) * tension;
+            d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+          }
+          return d;
+        };
+
+        const linePath = smoothLine(points);
+        const areaPath = `${linePath} L${points[points.length-1].x},${padT + chartH} L${points[0].x},${padT + chartH} Z`;
+
+        // Y-axis ticks
+        const tickCount = 5;
+        const yTicks = Array.from({ length: tickCount }, (_, i) => {
+          const val = padded.min + (i / (tickCount - 1)) * valueRange;
+          const y = padT + chartH - (i / (tickCount - 1)) * chartH;
+          return { val, y };
+        });
+
+        const fmtShort = (n) => {
+          if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
+          if (n >= 1000) return `₹${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K`;
+          return `₹${Math.round(n)}`;
+        };
+
+        return (
+          <div className={`rounded-2xl border mb-8 overflow-hidden ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-200 shadow-sm"}`}>
+            {/* Header */}
+            <div className="px-6 pt-6 pb-2 flex items-start justify-between">
+              <div>
+                <h2 className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>Revenue</h2>
+                <p className={`mt-1 flex items-center gap-2`}>
+                  <span className={`text-sm ${isDark ? "text-slate-400" : "text-gray-500"}`}>Total Revenue</span>
+                  <span className={`text-lg font-bold ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>{fmt(totalMonthlyRev)}</span>
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                  <span className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}>Revenue</span>
                 </div>
-              );
-            })}
+              </div>
+            </div>
+
+            {/* SVG Chart */}
+            <div className="px-4 pb-4">
+              <svg
+                viewBox={`0 0 ${W} ${H}`}
+                className="w-full"
+                style={{ maxHeight: '300px' }}
+              >
+                <defs>
+                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={isDark ? "#818cf8" : "#6366f1"} stopOpacity="0.35" />
+                    <stop offset="100%" stopColor={isDark ? "#818cf8" : "#6366f1"} stopOpacity="0.02" />
+                  </linearGradient>
+                  <filter id="glow">
+                    <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                    <feMerge>
+                      <feMergeNode in="coloredBlur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+
+                {/* Horizontal grid lines */}
+                {yTicks.map((t, i) => (
+                  <g key={i}>
+                    <line
+                      x1={padL} y1={t.y} x2={W - padR} y2={t.y}
+                      stroke={isDark ? "#334155" : "#f1f5f9"}
+                      strokeWidth="1"
+                      strokeDasharray={i === 0 ? "0" : "4,4"}
+                    />
+                    <text
+                      x={padL - 8} y={t.y + 4}
+                      textAnchor="end"
+                      fill={isDark ? "#94a3b8" : "#94a3b8"}
+                      fontSize="11"
+                      fontFamily="inherit"
+                    >
+                      {fmtShort(t.val)}
+                    </text>
+                  </g>
+                ))}
+
+                {/* Gradient area fill */}
+                <path d={areaPath} fill="url(#revenueGradient)" />
+
+                {/* Smooth line */}
+                <path
+                  d={linePath}
+                  fill="none"
+                  stroke={isDark ? "#818cf8" : "#6366f1"}
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  filter="url(#glow)"
+                />
+
+                {/* Data points + month labels */}
+                {points.map((p, i) => (
+                  <g key={i} className="group">
+                    {/* Vertical dashed hover line */}
+                    <line
+                      x1={p.x} y1={padT} x2={p.x} y2={padT + chartH}
+                      stroke={isDark ? "#475569" : "#cbd5e1"}
+                      strokeWidth="1"
+                      strokeDasharray="3,3"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    />
+
+                    {/* Visible dot */}
+                    <circle
+                      cx={p.x} cy={p.y} r="4"
+                      fill={isDark ? "#818cf8" : "#6366f1"}
+                      stroke={isDark ? "#1e293b" : "#ffffff"}
+                      strokeWidth="2"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    />
+
+                    {/* Hover target (invisible larger area) */}
+                    <rect
+                      x={p.x - (chartW / data.length) / 2}
+                      y={padT}
+                      width={chartW / data.length}
+                      height={chartH}
+                      fill="transparent"
+                      className="cursor-pointer"
+                    />
+
+                    {/* Tooltip */}
+                    <g className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      <rect
+                        x={p.x - 45} y={p.y - 40}
+                        width="90" height="28"
+                        rx="6"
+                        fill={isDark ? "#1e293b" : "#1f2937"}
+                        opacity="0.95"
+                      />
+                      <text
+                        x={p.x} y={p.y - 22}
+                        textAnchor="middle"
+                        fill="white"
+                        fontSize="11"
+                        fontWeight="600"
+                        fontFamily="inherit"
+                      >
+                        {`Revenue: ${fmt(p.revenue)}`}
+                      </text>
+                      {/* Arrow */}
+                      <polygon
+                        points={`${p.x - 4},${p.y - 12} ${p.x + 4},${p.y - 12} ${p.x},${p.y - 7}`}
+                        fill={isDark ? "#1e293b" : "#1f2937"}
+                      />
+                    </g>
+
+                    {/* Month label */}
+                    <text
+                      x={p.x} y={H - 10}
+                      textAnchor="middle"
+                      fill={isDark ? "#94a3b8" : "#94a3b8"}
+                      fontSize="12"
+                      fontWeight="500"
+                      fontFamily="inherit"
+                    >
+                      {p.label}
+                    </text>
+                  </g>
+                ))}
+              </svg>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Filters */}
       <div className={`rounded-xl p-4 border mb-4 flex flex-wrap gap-3 items-center ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-gray-200 shadow-sm"}`}>
@@ -234,9 +426,25 @@ const Payments = () => {
                       {(page - 1) * LIMIT + idx + 1}
                     </td>
                     <td className="px-4 py-3">
-                      <p className={`font-medium ${isDark ? "text-white" : "text-gray-900"}`}>{p.user?.name || "—"}</p>
-                      <p className={`text-xs ${isDark ? "text-slate-400" : "text-gray-400"}`}>{p.user?.phone}</p>
-                      <p className={`text-xs capitalize ${isDark ? "text-slate-500" : "text-gray-400"}`}>{p.user?.userType?.toLowerCase()}</p>
+                      {p.user?._id ? (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigate(`/admin/users?userId=${p.user._id}`); }}
+                          className={`text-left group`}
+                        >
+                          <p className={`font-medium flex items-center gap-1 group-hover:text-indigo-500 transition ${isDark ? "text-white" : "text-gray-900"}`}>
+                            {p.user?.name || "—"}
+                            <ExternalLink size={11} className="opacity-0 group-hover:opacity-100 transition" />
+                          </p>
+                          <p className={`text-xs ${isDark ? "text-slate-400" : "text-gray-400"}`}>{p.user?.phone}</p>
+                          <p className={`text-xs capitalize ${isDark ? "text-slate-500" : "text-gray-400"}`}>{p.user?.userType?.toLowerCase()}</p>
+                        </button>
+                      ) : (
+                        <>
+                          <p className={`font-medium ${isDark ? "text-white" : "text-gray-900"}`}>{p.user?.name || "—"}</p>
+                          <p className={`text-xs ${isDark ? "text-slate-400" : "text-gray-400"}`}>{p.user?.phone}</p>
+                          <p className={`text-xs capitalize ${isDark ? "text-slate-500" : "text-gray-400"}`}>{p.user?.userType?.toLowerCase()}</p>
+                        </>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <p className={`font-medium ${isDark ? "text-white" : "text-gray-900"}`}>{p.planSnapshot?.planName || p.plan?.planName || "—"}</p>

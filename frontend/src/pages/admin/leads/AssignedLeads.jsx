@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../../context/ThemeContext";
 import Loader from "../../../components/common/Loader";
 import { getAllLeads } from "../../../api/admin.lead.api";
@@ -7,6 +8,7 @@ const Leads = () => {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({
     status: "",
     assignedTo: "",
@@ -189,15 +191,20 @@ const Leads = () => {
                 {leads.map((lead) => (
                   <tr key={lead._id} className={`border-b transition ${isDark ? 'border-slate-700 hover:bg-slate-700/50' : 'border-gray-200 hover:bg-gray-50'}`}>
                     <td className="px-6 py-4">
-                      <div className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        {lead.assignedTo?.name || "N/A"}
-                      </div>
-                      <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                        {lead.assignedTo?.phone || "N/A"}
-                      </div>
-                      <span className={`inline-block px-2 py-1 rounded text-xs font-medium mt-1 ${getUserTypeColor(lead.assignedTo?.userType)}`}>
-                        {lead.assignedTo?.userType || "N/A"}
-                      </span>
+                      <button
+                        onClick={() => lead.assignedTo?._id && navigate(`/admin/users?userId=${lead.assignedTo._id}`)}
+                        className="text-left group"
+                      >
+                        <div className={`font-medium group-hover:text-indigo-500 transition ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {lead.assignedTo?.name || "N/A"}
+                        </div>
+                        <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                          {lead.assignedTo?.phone || "N/A"}
+                        </div>
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium mt-1 ${getUserTypeColor(lead.assignedTo?.userType)}`}>
+                          {lead.assignedTo?.userType || "N/A"}
+                        </span>
+                      </button>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getLeadTypeColor(lead.leadType)}`}>

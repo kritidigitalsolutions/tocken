@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../../context/ThemeContext";
 import Loader from "../../../components/common/Loader";
 import { 
@@ -12,6 +13,7 @@ const LeadRequests = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({
     status: "PENDING",
     page: 1,
@@ -235,15 +237,20 @@ const LeadRequests = () => {
                 {requests.map((request) => (
                   <tr key={request._id} className={`border-b transition ${isDark ? 'border-slate-700 hover:bg-slate-700/50' : 'border-gray-200 hover:bg-gray-50'}`}>
                     <td className="px-6 py-4">
-                      <div className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        {request.requestedBy?.name || "N/A"}
-                      </div>
-                      <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                        {request.requestedBy?.phone}
-                      </div>
-                      <span className={`inline-block px-2 py-1 rounded text-xs font-medium mt-1 ${getUserTypeColor(request.requestedBy?.userType)}`}>
-                        {request.requestedBy?.userType}
-                      </span>
+                      <button
+                        onClick={() => request.requestedBy?._id && navigate(`/admin/users?userId=${request.requestedBy._id}`)}
+                        className="text-left group"
+                      >
+                        <div className={`font-medium group-hover:text-indigo-500 transition ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {request.requestedBy?.name || "N/A"}
+                        </div>
+                        <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                          {request.requestedBy?.phone}
+                        </div>
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium mt-1 ${getUserTypeColor(request.requestedBy?.userType)}`}>
+                          {request.requestedBy?.userType}
+                        </span>
+                      </button>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getLeadTypeColor(request.leadType)}`}>

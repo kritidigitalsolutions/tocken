@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getAllBookmarks, getBookmarkStats } from "../../../api/admin.bookmark.api";
 import Loader from "../../../components/common/Loader";
 import { Bookmark, Eye, X, User, Phone, Calendar, Home } from "lucide-react";
@@ -12,6 +13,7 @@ const Bookmarks = () => {
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const { isDark } = useTheme();
+  const navigate = useNavigate();
 
   const categories = ["All", "RESIDENTIAL", "COMMERCIAL", "PG", "Co-Living", "Plot/Land"];
 
@@ -176,12 +178,15 @@ const Bookmarks = () => {
                 {bookmarks.map((item) => (
                   <tr key={item._id} className={`border-b transition ${isDark ? 'border-slate-700 hover:bg-slate-700/50' : 'border-gray-200 hover:bg-gray-50'}`}>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => item.user?._id && navigate(`/admin/users?userId=${item.user._id}`)}
+                        className="flex items-center gap-2 group"
+                      >
                         <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center">
                           <User size={14} className="text-white" />
                         </div>
-                        <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.user?.name || "N/A"}</span>
-                      </div>
+                        <span className={`font-medium group-hover:text-indigo-500 transition ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.user?.name || "N/A"}</span>
+                      </button>
                     </td>
                     <td className="px-6 py-4">
                       <div className={`flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { fetchUsers, updateUser, deleteUser, togglePhonePrivacy } from "../../../api/user.api";
 import { getUserProperties, updatePropertyStatus, getPropertyDetails, makePremium, removePremium, deleteProperty } from "../../../api/admin.property.api";
 import { getUserProjects, updateProjectStatus, toggleFeatured as toggleProjectFeatured, deleteProject as deleteProjectAdmin } from "../../../api/admin.project.api";
@@ -41,6 +42,7 @@ const defaultAvatar = "https://www.pngall.com/wp-content/uploads/15/User-PNG-Ima
 
 const Users = () => {
   const { isDark } = useTheme();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // States
   const [users, setUsers] = useState([]);
@@ -140,6 +142,17 @@ const Users = () => {
       setUsers(allUsers);
       setFilteredUsers(allUsers);
       setStats(res?.data?.stats || null);
+
+      // Auto-select user if userId param exists
+      const targetUserId = searchParams.get('userId');
+      if (targetUserId) {
+        const targetUser = allUsers.find(u => u._id === targetUserId);
+        if (targetUser) {
+          setSelectedUser(targetUser);
+          setViewMode('details');
+        }
+        setSearchParams({}, { replace: true });
+      }
     } catch (err) {
       console.error("Error loading users:", err);
       toast.error("Failed to load users");

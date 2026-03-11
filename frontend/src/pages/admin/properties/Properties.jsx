@@ -635,7 +635,7 @@ const Properties = () => {
                     <div className="flex items-center gap-1 mt-1">
                       <MapPin className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} />
                       <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
-                        {[propertyDetails.location?.locality, propertyDetails.location?.city].filter(Boolean).join(", ") || "Location not specified"}
+                        {[propertyDetails.location?.society, propertyDetails.location?.locality, propertyDetails.location?.city].filter(Boolean).join(", ") || "Location not specified"}
                       </span>
                     </div>
 
@@ -761,6 +761,35 @@ const Properties = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Location Details */}
+              {(propertyDetails.location?.city || propertyDetails.location?.locality || propertyDetails.location?.society) && (
+                <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
+                  <h4 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                    <MapPin className="w-4 h-4" /> Location Details
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {propertyDetails.location?.society && (
+                      <div className={`p-3 rounded-lg col-span-2 ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Society / Address</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.location.society}</p>
+                      </div>
+                    )}
+                    {propertyDetails.location?.locality && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>Locality</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.location.locality}</p>
+                      </div>
+                    )}
+                    {propertyDetails.location?.city && (
+                      <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-500'}`}>City</p>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{propertyDetails.location.city}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Description */}
               {propertyDetails.description && (
