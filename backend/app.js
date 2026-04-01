@@ -98,13 +98,14 @@ const expirePremiumListings = require("./utils/premiumExpiry");
 
 const app = express();
 
-app.use(express.urlencoded({ extended: false }))
+app.use(express.urlencoded({ extended: false }));
 
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
 app.use(express.json()); //  MUST BE BEFORE ROUTES
 app.post("/test", (req, res) => {
   console.log("BODY:", req.body);
@@ -113,20 +114,20 @@ app.post("/test", (req, res) => {
 
 
 // this is for first time add new admin data
-const bcrypt = require("bcryptjs");
-const Admin = require("./models/admin.model");
-const createAdmin = async () => {
-  const hashedPassword = await bcrypt.hash("admin123", 10);
+// const bcrypt = require("bcryptjs");
+// const Admin = require("./models/admin.model");
+// const createAdmin = async () => {
+//   const hashedPassword = await bcrypt.hash("admin123", 10);
 
-  await Admin.create({
-    name: "Super Admin",
-    email: "admin@realestate.com",
-    password: hashedPassword
-  });
+//   await Admin.create({
+//     name: "Super Admin",
+//     email: "admin@realestate.com",
+//     password: hashedPassword
+//   });
 
-  console.log("Admin created");
-};
-createAdmin().catch(err => console.log("Admin already exists or error:", err.message));
+//   console.log("Admin created");
+// };
+// createAdmin().catch(err => console.log("Admin already exists or error:", err.message));
 
 
 // Public banners (for users - GET only)

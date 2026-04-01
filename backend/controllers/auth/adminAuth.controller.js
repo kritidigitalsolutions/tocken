@@ -37,9 +37,11 @@ exports.adminLogin = async (req, res) => {
     }
 
     // 3️⃣ Generate JWT
+    // Backward compatibility: older admin records might not have role set.
+    const normalizedRole = String(admin.role || "ADMIN").trim().toUpperCase();
     const token = generateToken({
       id: admin._id,
-      role: admin.role
+      role: normalizedRole
     });
 
     // 4️⃣ Response

@@ -107,6 +107,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="username"
                 className={`w-full pl-11 pr-4 py-3 rounded-xl border transition-all duration-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${
                   isDark 
                     ? 'bg-slate-900/50 border-slate-600 text-white placeholder-slate-400' 
@@ -131,6 +132,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
                 className={`w-full pl-11 pr-12 py-3 rounded-xl border transition-all duration-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${
                   isDark 
                     ? 'bg-slate-900/50 border-slate-600 text-white placeholder-slate-400' 

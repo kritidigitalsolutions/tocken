@@ -5,11 +5,14 @@ const nodemailer = require("nodemailer");
  * Set EMAIL_USER and EMAIL_PASS (Gmail App Password) in .env
  */
 const createTransporter = () => {
+  const emailUser = (process.env.EMAIL_USER || "").trim();
+  const emailPass = (process.env.EMAIL_PASS || "").replace(/\s+/g, "");
+
   return nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS   // Gmail App Password (not your login password)
+      user: emailUser,
+      pass: emailPass   // Gmail App Password (not your login password)
     }
   });
 };
@@ -23,8 +26,8 @@ const createTransporter = () => {
  */
 const sendAdminOtpEmail = async (to, otp, purpose, adminName = "Admin") => {
   // Guard: ensure email credentials are properly configured
-  const user = process.env.EMAIL_USER;
-  const pass = process.env.EMAIL_PASS;
+  const user = (process.env.EMAIL_USER || "").trim();
+  const pass = (process.env.EMAIL_PASS || "").replace(/\s+/g, "");
 
   if (!user || !pass) {
     throw new Error("Email not configured: EMAIL_USER and EMAIL_PASS must be set in .env");
@@ -35,6 +38,9 @@ const sendAdminOtpEmail = async (to, otp, purpose, adminName = "Admin") => {
       "EMAIL_PASS looks like an email address. It must be a Gmail App Password (16-char code). " +
       "Go to: Google Account → Security → 2-Step Verification → App Passwords"
     );
+  }
+  if (pass.length < 16) {
+    throw new Error("EMAIL_PASS appears invalid. Use a 16-character Gmail App Password.");
   }
 
   const transporter = createTransporter();
@@ -96,7 +102,7 @@ const sendAdminOtpEmail = async (to, otp, purpose, adminName = "Admin") => {
   `;
 
   await transporter.sendMail({
-    from: `"Admin Panel 🔐" <${process.env.EMAIL_USER}>`,
+    from: `"Admin Panel 🔐" <${user}>`,
     to,
     subject: `[Admin Panel] OTP for ${purposeLabel} — ${otp}`,
     html

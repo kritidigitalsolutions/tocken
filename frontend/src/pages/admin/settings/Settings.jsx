@@ -19,6 +19,17 @@ import { sendCredentialOtp, verifyCredentialOtp, updateCredentials } from "../..
 
 const STEPS = { INPUT: 1, OTP: 2, SUCCESS: 3 };
 
+const getStoredAdminEmail = () => {
+  try {
+    const rawAdmin = localStorage.getItem("admin");
+    if (!rawAdmin) return "";
+    const parsed = JSON.parse(rawAdmin);
+    return parsed?.email || "";
+  } catch {
+    return "";
+  }
+};
+
 // ─── OTP Input component ───────────────────────────────────────────────────────
 const OtpInput = ({ value, onChange, isDark }) => {
   const digits = value.split("");
@@ -138,6 +149,7 @@ const StepBar = ({ step, isDark }) => {
 
 // ─── Combined Email & Password Update Section ─────────────────────────────────
 const CombinedUpdateSection = ({ isDark }) => {
+  const currentAdminEmail = getStoredAdminEmail();
   const [step, setStep] = useState(STEPS.INPUT);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -264,6 +276,17 @@ const CombinedUpdateSection = ({ isDark }) => {
       {/* Step 1 — Enter new credentials */}
       {step === STEPS.INPUT && (
         <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(); }} className="space-y-4">
+          <input
+            type="text"
+            name="username"
+            autoComplete="username"
+            value={currentAdminEmail}
+            readOnly
+            tabIndex={-1}
+            aria-hidden="true"
+            className="sr-only"
+          />
+
           {/* New Email */}
           <div>
             <label className={`block text-sm font-medium mb-1.5 ${isDark ? "text-slate-300" : "text-gray-700"}`}>
