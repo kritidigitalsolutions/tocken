@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { fetchUsers, updateUser, deleteUser, togglePhonePrivacy } from "../../../api/user.api";
 import { getUserProperties, updatePropertyStatus, getPropertyDetails, makePremium, removePremium, deleteProperty } from "../../../api/admin.property.api";
@@ -96,10 +96,39 @@ const Users = () => {
     return colors[type] || { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-600 dark:text-gray-400", border: "border-gray-200 dark:border-gray-700" };
   };
 
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetchUsers({ userType: "All" });
+      const allUsers = res?.data?.users || [];
+      setUsers(allUsers);
+      setFilteredUsers(allUsers);
+      setStats(res?.data?.stats || null);
+
+      // Auto-select user if userId param exists
+      const targetUserId = searchParams.get('userId');
+      if (targetUserId) {
+        const targetUser = allUsers.find(u => u._id === targetUserId);
+        if (targetUser) {
+          setSelectedUser(targetUser);
+          setViewMode('details');
+        }
+        setSearchParams({}, { replace: true });
+      }
+    } catch (err) {
+      console.error("Error loading users:", err);
+      toast.error("Failed to load users");
+      setUsers([]);
+      setFilteredUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchParams, setSearchParams]);
+
   // Load users
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   // Filter users based on search, type and status
   useEffect(() => {
@@ -133,35 +162,6 @@ const Users = () => {
 
     setFilteredUsers(filtered);
   }, [selectedUserType, selectedStatus, searchQuery, users]);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const res = await fetchUsers({ userType: "All" });
-      const allUsers = res?.data?.users || [];
-      setUsers(allUsers);
-      setFilteredUsers(allUsers);
-      setStats(res?.data?.stats || null);
-
-      // Auto-select user if userId param exists
-      const targetUserId = searchParams.get('userId');
-      if (targetUserId) {
-        const targetUser = allUsers.find(u => u._id === targetUserId);
-        if (targetUser) {
-          setSelectedUser(targetUser);
-          setViewMode('details');
-        }
-        setSearchParams({}, { replace: true });
-      }
-    } catch (err) {
-      console.error("Error loading users:", err);
-      toast.error("Failed to load users");
-      setUsers([]);
-      setFilteredUsers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Handle user click
   const handleUserClick = (user) => {

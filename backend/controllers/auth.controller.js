@@ -3,6 +3,49 @@ const OTP = require("../models/OTP.model");
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
 
+const DEMO_PHONE_DIGITS = "9999999999";
+const DEMO_PHONE = "+91" + DEMO_PHONE_DIGITS;
+const DEMO_OTP = "123456";
+const DEMO_USER_PROFILE = {
+  name: "Demo User",
+  firstName: "Demo",
+  lastName: "User",
+  email: "demo.user@token.app",
+  userType: "INDIVIDUAL"
+};
+
+const normalizePhone = (phone = "") => {
+  let cleanPhone = phone.replace(/[^0-9]/g, "");
+  if (!cleanPhone.startsWith("91")) {
+    cleanPhone = "91" + cleanPhone;
+  }
+  return {
+    cleanPhone,
+    formattedPhoneWithPlus: "+" + cleanPhone
+  };
+};
+
+const ensureDemoUserExists = async () => {
+  let user = await User.findOne({ phone: DEMO_PHONE });
+  if (user) {
+    return user;
+  }
+
+  let username = "DEMOUSER9999";
+  const existingUsername = await User.findOne({ username });
+  if (existingUsername) {
+    username = `DEMOUSER${Date.now().toString().slice(-6)}`;
+  }
+
+  user = await User.create({
+    phone: DEMO_PHONE,
+    username,
+    ...DEMO_USER_PROFILE
+  });
+
+  return user;
+};
+
 /**
  * SEND OTP
  * Generates and sends OTP via RapidSMS
@@ -20,11 +63,25 @@ exports.sendOTP = async (req, res) => {
     }
 
     // Format phone number: remove all non-digits, then add country code
-    let cleanPhone = phone.replace(/[^0-9]/g, '');
-    if (!cleanPhone.startsWith('91')) {
-      cleanPhone = '91' + cleanPhone;
+    const { cleanPhone, formattedPhoneWithPlus } = normalizePhone(phone);
+
+    // Fixed demo user for Play Store testing.
+    if (formattedPhoneWithPlus === DEMO_PHONE) {
+      await ensureDemoUserExists();
+      await OTP.deleteMany({ phone: formattedPhoneWithPlus });
+      await OTP.create({
+        phone: formattedPhoneWithPlus,
+        otp: DEMO_OTP,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Demo OTP ready",
+        phone: formattedPhoneWithPlus,
+        debug: { otp: DEMO_OTP, isDemoUser: true }
+      });
     }
-    const formattedPhoneWithPlus = '+' + cleanPhone;
 
     // Generate 6-digit OTP
     const generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
@@ -122,11 +179,29 @@ exports.verifyOTP = async (req, res) => {
     }
 
     // Format phone number
-    let cleanPhone = phone.replace(/[^0-9]/g, '');
-    if (!cleanPhone.startsWith('91')) {
-      cleanPhone = '91' + cleanPhone;
+    const { formattedPhoneWithPlus: formattedPhone } = normalizePhone(phone);
+
+    if (formattedPhone === DEMO_PHONE && otp === DEMO_OTP) {
+      const demoUser = await ensureDemoUserExists();
+      const token = jwt.sign(
+        {
+          id: demoUser._id,
+          phone: demoUser.phone,
+          role: "USER"
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "365d" }
+      );
+
+      return res.status(200).json({
+        success: true,
+        isNewUser: false,
+        message: "Demo login successful",
+        token,
+        user: demoUser,
+        demoUser: true
+      });
     }
-    const formattedPhone = '+' + cleanPhone;
 
     // Find valid OTP
     const otpRecord = await OTP.findOne({
