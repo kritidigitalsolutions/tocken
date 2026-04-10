@@ -1,0 +1,98 @@
+
+
+.top-features {
+  background: #FFFFFF;
+  position: relative;
+}
+
+.top-features__container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 40px 80px 32px 80px;
+}
+
+.top-features__heading {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  color: #1A1A1A;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.top-features__carousel-wrapper {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  /* Optional: soft fade at edges to make looping look smoother */
+  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+          mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+
+.top-features__carousel-track {
+  display: flex;
+  align-items: center;
+  gap: 60px; /* Space between items */
+  width: max-content;
+  padding-right: 60px; /* Important for a smooth seamless loop */
+  animation: scrollCarousel 25s linear infinite;
+}
+
+@keyframes scrollCarousel {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); } 
+}
+
+.top-features__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.top-features__icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.top-features__text {
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #1A1A1A;
+  max-width: 100px;
+  line-height: 1.3;
+  white-space: pre-wrap;
+}
+
+.top-features__divider {
+  width: 100%;
+  height: 1px;
+  background-color: #E5E5E5;
+}
+
+/* ━━━━ Responsive ━━━━ */
+@media (max-width: 1024px) {
+  .top-features__container {
+    padding: 32px 40px 24px 40px;
+  }
+  .top-features__carousel-track {
+    gap: 40px;
+    padding-right: 40px;
+    animation: scrollCarousel 20s linear infinite;
+  }
+}
+
+@media (max-width: 768px) {
+  .top-features__container {
+    padding: 32px 20px;
+  }
+  .top-features__carousel-track {
+    gap: 30px;
+    padding-right: 30px;
+  }
+  .top-features__text {
+    max-width: none;
+    white-space: normal;
+  }
+}

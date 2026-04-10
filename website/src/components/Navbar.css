@@ -1,0 +1,234 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   NAVBAR — Pixel Perfect
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.navbar {
+  --nav-height: 72px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: #FFFFFF;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s ease, background 0.3s ease;
+  overflow-x: clip;
+}
+
+.navbar--scrolled {
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+}
+
+.navbar__inner {
+  width: min(1280px, 100%);
+  margin: 0 auto;
+  padding: 0 clamp(12px, 3.2vw, 40px);
+  height: var(--nav-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(8px, 2vw, 20px);
+}
+
+/* Logo */
+.navbar__logo {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.navbar__logo-img {
+  height: clamp(34px, 4.8vw, 42px);
+  width: auto;
+  max-width: min(160px, 38vw);
+  object-fit: contain;
+}
+
+/* Nav Links */
+.navbar__links {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.navbar__link-item {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.navbar__link {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #4A4A4A;
+  text-decoration: none;
+  padding: 8px clamp(8px, 1.4vw, 20px);
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.navbar__link:hover {
+  color: #E53935;
+}
+
+.navbar__link--active {
+  color: #E53935;
+  font-weight: 600;
+}
+
+.navbar__separator {
+  color: #D1D5DB;
+  font-size: 15px;
+  font-weight: 300;
+  user-select: none;
+}
+
+/* CTA Button — FILLED Red Pill */
+.navbar__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #E53935;
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 11px clamp(12px, 1.8vw, 28px);
+  border-radius: 50px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.navbar__cta:hover {
+  background: #C62828;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(229, 57, 53, 0.35);
+}
+
+/* Hamburger */
+.navbar__hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: #1A1A1A;
+  cursor: pointer;
+  padding: 8px;
+}
+
+/* Mobile Drawer */
+.navbar__mobile-drawer {
+  position: fixed;
+  top: var(--nav-height);
+  right: -100%;
+  width: min(320px, 86vw);
+  height: calc(100vh - var(--nav-height));
+  background: #FFFFFF;
+  z-index: 998;
+  padding: 32px 24px;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+  transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.navbar__mobile-drawer--open {
+  right: 0;
+}
+
+.navbar__mobile-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.navbar__mobile-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #4A4A4A;
+  text-decoration: none;
+  padding: 12px 16px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.navbar__mobile-link:hover,
+.navbar__mobile-link--active {
+  color: #E53935;
+  background: rgba(229, 57, 53, 0.06);
+  font-weight: 600;
+}
+
+.navbar__mobile-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #E53935;
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 14px 24px;
+  border-radius: 50px;
+  text-decoration: none;
+}
+
+/* Overlay */
+.navbar__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 997;
+  backdrop-filter: blur(2px);
+}
+
+/* ━━━━ Responsive ━━━━ */
+@media (max-width: 900px) {
+  .navbar {
+    --nav-height: 64px;
+  }
+
+  .navbar__inner {
+    padding: 0 14px;
+  }
+
+  .navbar__links {
+    display: none;
+  }
+
+  .navbar__cta {
+    display: none;
+  }
+
+  .navbar__hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .navbar {
+    --nav-height: 60px;
+  }
+
+  .navbar__inner {
+    padding: 0 10px;
+  }
+
+  .navbar__logo-img {
+    max-width: 126px;
+  }
+}

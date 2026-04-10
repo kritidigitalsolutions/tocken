@@ -1,0 +1,219 @@
+/* ============================================
+   PROPERTY OWNER SECTION
+   ============================================ */
+
+.pos-section {
+  background-color: #EEEEF2;
+  padding: 80px 100px;
+  font-family: 'Inter', sans-serif;
+}
+
+.pos-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 40px;
+}
+
+/* ─── LEFT COLUMN ─── */
+.pos-left {
+  width: 45%;
+  flex-shrink: 0;
+}
+
+/* Pill badge */
+.pos-pill {
+  display: inline-block;
+  border: 1.5px solid #E53935;
+  color: #E53935;
+  background-color: #FFE8E8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border-radius: 50px;
+  padding: 5px 14px;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+  font-family: 'Urbanist', sans-serif;
+}
+
+/* Heading */
+.pos-heading {
+  font-size: 48px;
+  font-weight: 800;
+  color: #111111;
+  line-height: 1.1;
+  margin: 0;
+  font-family: 'Urbanist', sans-serif;
+}
+
+/* Image block */
+.pos-image-block {
+  margin-top: 24px;
+  max-width: 400px;
+}
+
+/* Composed image */
+.pos-composed-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-width: 400px;
+}
+
+/* ─── RIGHT COLUMN ─── */
+.pos-right {
+  flex: 1;
+  padding-top: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 520px;
+}
+
+/* ─── ACCORDION CARDS ─── */
+
+.pos-card-wrapper {
+  cursor: pointer;
+}
+
+/* Header card */
+.pos-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-radius: 14px;
+  padding: 16px 22px;
+  transition: background-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+/* Active state */
+.pos-card-header--active {
+  background-color: #FFFFFF;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+}
+
+/* Inactive state — visible against #EEEEF2 section bg */
+.pos-card-header--inactive {
+  background-color: #F7F7FA;
+  box-shadow: none;
+}
+
+.pos-card-header--inactive:hover {
+  background-color: #F2F2F6;
+}
+
+/* Icon circle */
+.pos-icon-circle {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  border-radius: 50%;
+  background-color: #FFE8E8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pos-icon-circle svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Title text */
+.pos-card-title {
+  font-size: 15px;
+  font-family: 'Inter', sans-serif;
+  transition: color 0.35s ease;
+}
+
+.pos-card-title--active {
+  font-weight: 700;
+  color: #E53935;
+}
+
+.pos-card-title--inactive {
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+/* Body text — below the header card, NOT inside it */
+.pos-card-body {
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.35s ease;
+}
+
+.pos-card-body--open {
+  max-height: 200px;
+  opacity: 1;
+}
+
+.pos-card-body--closed {
+  max-height: 0;
+  opacity: 0;
+}
+
+.pos-card-body-text {
+  margin-top: 10px;
+  padding-left: 22px;
+  padding-right: 14px;
+  font-size: 14px;
+  color: #777777;
+  line-height: 1.7;
+  font-weight: 400;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .pos-section {
+    padding: 40px 24px;
+  }
+
+  .pos-container {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .pos-left {
+    width: 100%;
+  }
+
+  .pos-heading {
+    font-size: 36px;
+  }
+
+  .pos-image-block {
+    max-width: 320px;
+    margin: 24px auto 0;
+  }
+
+  .pos-right {
+    width: 100%;
+    padding-top: 40px;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .pos-section {
+    padding: 28px 12px;
+  }
+
+  .pos-heading {
+    font-size: 28px;
+  }
+
+  .pos-card-header {
+    padding: 12px 14px;
+  }
+
+  .pos-card-body-text {
+    padding-left: 14px;
+    padding-right: 8px;
+  }
+}
