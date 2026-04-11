@@ -39,6 +39,9 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 body {
@@ -46,7 +49,22 @@ body {
   color: var(--dark);
   background: var(--white);
   line-height: 1.6;
-  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+main,
+section,
+nav,
+footer {
+  max-width: 100%;
 }
 
 a {
@@ -83,7 +101,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ==================== UTILITIES ==================== */
 .container {
-  max-width: var(--max-width);
+  width: min(var(--max-width), 100%);
   margin: 0 auto;
   padding: 0 24px;
 }

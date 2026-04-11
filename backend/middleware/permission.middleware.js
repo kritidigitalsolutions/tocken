@@ -1,10 +1,13 @@
 const Admin = require("../models/admin.model");
+const permissionsMap = require("../utils/permissions");
+
+const normalizeRole = (role) => String(role || "").trim().toUpperCase();
 
 module.exports = (requiredPermission) => {
   return async (req, res, next) => {
     try {
-      // Fetch admin from DB to get permissions
-      const admin = await Admin.findById(req.user.id).select("permissions");
+      // Fetch admin from DB to get role + permissions
+      const admin = await Admin.findById(req.user.id).select("role permissions");
       
       if (!admin) {
         return res.status(403).json({
@@ -12,7 +15,19 @@ module.exports = (requiredPermission) => {
         });
       }
 
-      if (!admin.permissions || !admin.permissions.includes(requiredPermission)) {
+      const role = normalizeRole(admin.role || req.user?.role || "ADMIN");
+      // Super admin always has access for admin actions.
+      if (role === "SUPER_ADMIN") {
+        return next();
+      }
+
+      const dbPermissions = Array.isArray(admin.permissions) ? admin.permissions : [];
+      // Backward compatibility: use role defaults when DB permissions are missing.
+      const effectivePermissions = dbPermissions.length
+        ? dbPermissions
+        : (permissionsMap[role] || []);
+
+      if (!effectivePermissions.includes(requiredPermission)) {
         return res.status(403).json({
           message: "Access denied: insufficient permissions"
         });

@@ -9,7 +9,7 @@
   background: linear-gradient(135deg, #E84E3C 0%, #C9392A 100%);
   border-radius: 28px;
   position: relative;
-  overflow: visible;          /* keep slight phone overflow */
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -126,7 +126,7 @@
 
 @media (max-width: 768px) {
   .cta-section {
-    padding: 24px 16px 92px;
+    padding: 24px 16px 52px;
   }
 
   .cta-banner {
@@ -164,7 +164,7 @@
 
 @media (max-width: 480px) {
   .cta-section {
-    padding: 20px 10px 78px;
+    padding: 20px 10px 34px;
   }
 
   .cta-banner {
@@ -188,7 +188,7 @@
   .cta-banner__phones {
     width: min(94vw, 300px);
     height: 228px;
-    margin-bottom: -34px;
+    margin-bottom: -18px;
   }
 
   .cta-banner__rings {

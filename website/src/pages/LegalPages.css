@@ -1,0 +1,161 @@
+.legal-page {
+  background: #f8f9fc;
+  min-height: 100vh;
+}
+
+.legal-main {
+  padding-top: 112px;
+  padding-bottom: 56px;
+}
+
+.legal-hero {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.legal-hero h1 {
+  font-size: clamp(34px, 6vw, 56px);
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.legal-hero p {
+  color: var(--gray);
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.legal-card {
+  background: #ffffff;
+  border: 1px solid #e9eaf1;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
+  padding: 28px;
+}
+
+.legal-section + .legal-section {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid #ebedf3;
+}
+
+.legal-section h2 {
+  color: #e53935;
+  font-size: clamp(22px, 3vw, 30px);
+  margin-bottom: 12px;
+}
+
+.legal-section h3 {
+  color: #2a2d35;
+  font-size: 20px;
+  margin: 20px 0 10px;
+}
+
+.legal-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #51596b;
+  line-height: 1.8;
+}
+
+.legal-list li + li {
+  margin-top: 8px;
+}
+
+.legal-note {
+  margin-top: 16px;
+  color: #30374a;
+  font-weight: 600;
+}
+
+.delete-form {
+  margin-top: 14px;
+  display: grid;
+  gap: 14px;
+}
+
+.delete-form label {
+  font-size: 14px;
+  color: #3f4759;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.delete-form input,
+.delete-form textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d6dae3;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: var(--font-body);
+  color: #1f2937;
+  background: #ffffff;
+}
+
+.delete-form textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+
+.delete-form input:focus,
+.delete-form textarea:focus {
+  outline: none;
+  border-color: #e53935;
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.12);
+}
+
+.delete-form__checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #4a5161;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.delete-form__checkbox input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+}
+
+.delete-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.delete-form__submit {
+  border: none;
+  border-radius: 999px;
+  background: #e53935;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 12px 22px;
+  cursor: pointer;
+}
+
+.delete-form__submit:hover {
+  background: #c62828;
+}
+
+.delete-form__mail-link {
+  color: #e53935;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .legal-main {
+    padding-top: 92px;
+    padding-bottom: 44px;
+  }
+
+  .legal-card {
+    padding: 20px;
+    border-radius: 14px;
+  }
+}

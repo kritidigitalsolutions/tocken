@@ -1,8 +1,4 @@
 import { useState, useRef } from 'react'
-import { Swiper, SwiperSlide } from 'swiper/react'
-import { Autoplay, Pagination } from 'swiper/modules'
-import 'swiper/css'
-import 'swiper/css/pagination'
 import './DeveloperPortalSection.css'
 
 import featureImg from '../assets/images/feature-1.jpg'
@@ -196,24 +192,10 @@ export default function DeveloperPortalSection() {
         ))}
       </div>
 
-      <div className="dev-swiper-mobile">
-        <Swiper
-          modules={[Autoplay, Pagination]}
-          slidesPerView={1.2}
-          spaceBetween={16}
-          centeredSlides={true}
-          loop={true}
-          grabCursor={true}
-          autoplay={{ delay: 2500, disableOnInteraction: false }}
-          pagination={{ clickable: true }}
-          style={{ paddingBottom: '40px' }}
-        >
-          {allCards.map((card, i) => (
-            <SwiperSlide key={`sw-${i}`}>
-              <DevCard {...card} gridArea="auto" />
-            </SwiperSlide>
-          ))}
-        </Swiper>
+      <div className="dev-mobile-stack">
+        {allCards.map((card, i) => (
+          <DevCard key={`mobile-card-${i}`} {...card} gridArea="auto" />
+        ))}
       </div>
     </section>
   )

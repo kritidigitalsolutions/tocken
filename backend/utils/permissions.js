@@ -17,6 +17,7 @@ module.exports = {
     "PROPERTY_APPROVE",
     "PROPERTY_REJECT",
     "PROPERTY_BLOCK",
+    "PROPERTY_DELETE",
     "PREMIUM_GRANT",
     "PREMIUM_REMOVE",
     "VIEW_LEADS",

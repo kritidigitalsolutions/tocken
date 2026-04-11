@@ -259,7 +259,8 @@
   }
 
   .blog-section__featured-img {
-    max-height: 320px;
+    max-height: 450px;
+    display: none;
   }
 
   .blog-card {

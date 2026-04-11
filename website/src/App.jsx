@@ -7,6 +7,9 @@ import DeveloperDashboardHome from './pages/developer/DeveloperDashboardHome'
 import DeveloperPostProject from './pages/developer/DeveloperPostProject'
 import DeveloperProjectListing from './pages/developer/DeveloperProjectListing'
 import DeveloperPaymentStatus from './pages/developer/DeveloperPaymentStatus'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsAndConditions from './pages/TermsAndConditions'
+import DeleteAccount from './pages/DeleteAccount'
 import './App.css'
 
 function App() {
@@ -15,6 +18,12 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route path="/developer/login" element={<DeveloperLogin />} />
       <Route path="/payment/status/:merchantOrderId" element={<DeveloperPaymentStatus />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/privacy-policy.html" element={<PrivacyPolicy />} />
+      <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+      <Route path="/terms&condition.html" element={<TermsAndConditions />} />
+      <Route path="/delete-account" element={<DeleteAccount />} />
+      <Route path="/delete-account.html" element={<DeleteAccount />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/developer" element={<DeveloperLayout />}>
           <Route path="dashboard" element={<DeveloperDashboardHome />} />

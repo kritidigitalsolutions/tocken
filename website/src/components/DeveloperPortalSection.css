@@ -153,26 +153,9 @@
   /* transition is set inline via scrollStyle in JSX */
 }
 
-/* ── Mobile Swiper — hidden on desktop ── */
-.dev-swiper-mobile {
+/* ── Mobile Stack — hidden on desktop ── */
+.dev-mobile-stack {
   display: none;
-}
-
-.dev-swiper-mobile .swiper-slide {
-  height: auto !important;
-}
-
-.dev-swiper-mobile .swiper-pagination-bullet {
-  background: #CCCCCC;
-  opacity: 1;
-  width: 8px;
-  height: 8px;
-}
-
-.dev-swiper-mobile .swiper-pagination-bullet-active {
-  background: #E53935;
-  width: 24px;
-  border-radius: 4px;
 }
 
 /* ── Responsive ── */
@@ -195,8 +178,12 @@
     display: none;
   }
 
-  .dev-swiper-mobile {
-    display: block;
+  .dev-mobile-stack {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    max-width: 560px;
+    margin: 0 auto;
   }
 
   .dev-section {
@@ -213,6 +200,17 @@
 
   .dev-card--tall,
   .dev-card--medium {
-    min-height: 340px;
+    min-height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dev-mobile-stack {
+    gap: 12px;
+  }
+
+  .dev-card--tall,
+  .dev-card--medium {
+    min-height: 280px;
   }
 }

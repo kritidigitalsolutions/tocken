@@ -154,6 +154,11 @@
 }
 
 @media (max-width: 768px) {
+  .footer {
+    padding-top: 42px;
+    margin-top: 10px;
+  }
+
   .footer__columns {
     grid-template-columns: repeat(2, 1fr);
     gap: 24px;
@@ -173,6 +178,19 @@
 }
 
 @media (max-width: 480px) {
+  .footer {
+    padding-top: 28px;
+    margin-top: 6px;
+  }
+
+  .footer__top {
+    padding-bottom: 24px;
+  }
+
+  .footer__bottom {
+    padding: 16px 0;
+  }
+
   .footer__columns {
     grid-template-columns: 1fr;
     gap: 28px;

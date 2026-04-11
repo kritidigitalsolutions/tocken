@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { ArrowRight, Menu, X } from 'lucide-react'
 import logo from '../assets/images/logo.png'
 import './Navbar.css'
@@ -13,9 +13,13 @@ const navLinks = [
 ]
 
 export default function Navbar() {
+  const location = useLocation()
+  const isHomePage = location.pathname === '/'
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [activeLink, setActiveLink] = useState('Home')
+
+  const getLinkHref = (anchor) => (isHomePage ? anchor : `/${anchor}`)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -24,6 +28,11 @@ export default function Navbar() {
   }, [])
 
   useEffect(() => {
+    if (!isHomePage) {
+      setActiveLink('')
+      return undefined
+    }
+
     const sections = navLinks.map((l) => ({
       label: l.label,
       el: document.querySelector(l.href),
@@ -41,14 +50,14 @@ export default function Navbar() {
 
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  }, [isHomePage])
 
   return (
     <>
       <nav className={`navbar${scrolled ? ' navbar--scrolled' : ''}`} id="navbar">
         <div className="navbar__inner">
           {/* Logo */}
-          <a href="#home" className="navbar__logo">
+          <a href={getLinkHref('#home')} className="navbar__logo">
             <img src={logo} alt="TOCKEN" className="navbar__logo-img" />
           </a>
 
@@ -57,7 +66,7 @@ export default function Navbar() {
             {navLinks.map((link, i) => (
               <li key={link.label} className="navbar__link-item">
                 <a
-                  href={link.href}
+                  href={getLinkHref(link.href)}
                   className={`navbar__link${activeLink === link.label ? ' navbar__link--active' : ''}`}
                   onClick={() => setActiveLink(link.label)}
                 >
@@ -92,7 +101,7 @@ export default function Navbar() {
           {navLinks.map((link) => (
             <li key={link.label}>
               <a
-                href={link.href}
+                href={getLinkHref(link.href)}
                 className={`navbar__mobile-link${activeLink === link.label ? ' navbar__mobile-link--active' : ''}`}
                 onClick={() => {
                   setActiveLink(link.label)

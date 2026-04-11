@@ -4,6 +4,7 @@ import fbIcon from '../assets/images/fb.svg'
 import instaIcon from '../assets/images/insta.svg'
 import twitterIcon from '../assets/images/twitter.svg'
 import tiktokIcon from '../assets/images/tiktok.svg'
+import { Link } from 'react-router-dom'
 import './Footer.css'
 
 const footerColumns = [
@@ -53,10 +54,10 @@ const socialLinks = [
 ]
 
 const bottomLinks = [
-  { label: 'Privacy Policy', href: '#' },
-  { label: 'Terms of Service', href: '#' },
-  { label: 'Security', href: '#' },
-  { label: 'Data Record', href: '#' },
+  { label: 'Privacy Policy', href: '/privacy-policy' },
+  { label: 'Terms & Conditions', href: '/terms-and-conditions' },
+  { label: 'Delete Account', href: '/delete-account' },
+  { label: 'Refund Policy', href: '/terms-and-conditions' },
 ]
 
 export default function Footer() {
@@ -119,15 +120,15 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="footer__bottom">
           <div className="footer__bottom-inner">
-            <a href="#home" className="footer__bottom-logo">
+            <Link to="/" className="footer__bottom-logo">
               <img src={logo} alt="TOCKEN" />
-            </a>
+            </Link>
 
             <div className="footer__bottom-links">
               {bottomLinks.map((link, i) => (
-                <a key={i} href={link.href} className="footer__bottom-link">
+                <Link key={i} to={link.href} className="footer__bottom-link">
                   {link.label}
-                </a>
+                </Link>
               ))}
             </div>
 
