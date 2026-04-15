@@ -8,6 +8,119 @@ const { sendAdminOtpEmail } = require("../../utils/email.service");
 /** Generate a secure 6-digit OTP */
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
+exports.sendForgotPasswordOtp = async (req, res) => {
+  try {
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    if (!email || !email.includes("@")) {
+      return res.status(400).json({ success: false, message: "Valid email is required" });
+    }
+
+    const admin = await Admin.findOne({ email });
+    if (!admin) {
+      return res.status(200).json({
+        success: true,
+        message: "If this email is registered, OTP has been sent."
+      });
+    }
+
+    await AdminOTP.deleteMany({ adminId: admin._id, purpose: "password_change" });
+
+    const otp = generateOtp();
+    await AdminOTP.create({
+      adminId: admin._id,
+      email: admin.email,
+      otp,
+      purpose: "password_change"
+    });
+
+    await sendAdminOtpEmail(admin.email, otp, "password_change", admin.name);
+
+    return res.status(200).json({
+      success: true,
+      message: `OTP sent to ${admin.email}. Valid for 10 minutes.`
+    });
+  } catch (error) {
+    console.error("❌ sendForgotPasswordOtp error:", error);
+    const isConfigError = error.message?.includes("EMAIL_PASS") || error.message?.includes("EMAIL_USER") || error.message?.includes("not configured");
+    return res.status(isConfigError ? 503 : 500).json({
+      success: false,
+      message: isConfigError
+        ? "Email service not configured. Set a valid Gmail App Password in EMAIL_PASS."
+        : "Failed to send OTP",
+      error: error.message
+    });
+  }
+};
+
+exports.resetForgotPassword = async (req, res) => {
+  try {
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    const otp = String(req.body?.otp || "").trim();
+    const newPassword = String(req.body?.newPassword || "");
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "email, otp and newPassword are required"
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "newPassword must be at least 6 characters"
+      });
+    }
+
+    const admin = await Admin.findOne({ email });
+    if (!admin) {
+      return res.status(400).json({ success: false, message: "Invalid OTP or email" });
+    }
+
+    const record = await AdminOTP.findOne({
+      adminId: admin._id,
+      purpose: "password_change",
+      verified: false
+    }).sort({ createdAt: -1 });
+
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        message: "No pending OTP found. Please request a new OTP."
+      });
+    }
+
+    if (record.expiresAt < new Date()) {
+      await AdminOTP.deleteMany({ adminId: admin._id, purpose: "password_change" });
+      return res.status(410).json({
+        success: false,
+        message: "OTP has expired. Please request a new one."
+      });
+    }
+
+    if (record.otp !== otp || record.email !== email) {
+      return res.status(400).json({ success: false, message: "Invalid OTP or email" });
+    }
+
+    admin.password = await bcrypt.hash(newPassword, 12);
+    await admin.save();
+
+    await AdminOTP.deleteMany({ adminId: admin._id, purpose: "password_change" });
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successful. Please login with your new password."
+    });
+  } catch (error) {
+    console.error("❌ resetForgotPassword error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to reset password",
+      error: error.message
+    });
+  }
+};
+
 exports.adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;

@@ -91,6 +91,7 @@
 .dev-auth__button {
   margin-top: 8px;
   height: 46px;
+  padding: 0px 15px;
   border-radius: 12px;
   background: linear-gradient(135deg, #f0573f, #e7403c);
   color: #fff;

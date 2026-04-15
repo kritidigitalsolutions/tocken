@@ -2,17 +2,9 @@ const User = require("../models/user.model");
 const OTP = require("../models/OTP.model");
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
-
-const DEMO_PHONE_DIGITS = "9999999999";
-const DEMO_PHONE = "+91" + DEMO_PHONE_DIGITS;
-const DEMO_OTP = "123456";
-const DEMO_USER_PROFILE = {
-  name: "Demo User",
-  firstName: "Demo",
-  lastName: "User",
-  email: "demo.user@token.app",
-  userType: "INDIVIDUAL"
-};
+const fs = require("fs");
+const path = require("path");
+const https = require("https");
 
 const normalizePhone = (phone = "") => {
   let cleanPhone = phone.replace(/[^0-9]/g, "");
@@ -25,25 +17,66 @@ const normalizePhone = (phone = "") => {
   };
 };
 
-const ensureDemoUserExists = async () => {
-  let user = await User.findOne({ phone: DEMO_PHONE });
-  if (user) {
-    return user;
+const DEMO_USER_PHONE = normalizePhone(process.env.DEMO_USER_PHONE || "9999999999").formattedPhoneWithPlus;
+
+const ensureDemoUserExists = async (phone) => {
+  const existingUser = await User.findOne({ phone });
+  if (existingUser) {
+    return existingUser;
   }
 
-  let username = "DEMOUSER9999";
-  const existingUsername = await User.findOne({ username });
-  if (existingUsername) {
-    username = `DEMOUSER${Date.now().toString().slice(-6)}`;
+  const baseUsername = `DEMO${phone.replace(/\D/g, "").slice(-8)}`;
+  let username = baseUsername;
+  let suffix = 0;
+
+  while (await User.findOne({ username })) {
+    suffix += 1;
+    username = `${baseUsername}${suffix}`;
   }
 
-  user = await User.create({
-    phone: DEMO_PHONE,
+  return User.create({
+    phone,
     username,
-    ...DEMO_USER_PROFILE
+    name: "Demo User",
+    firstName: "Demo",
+    lastName: "User",
+    email: "",
+    userType: "INDIVIDUAL"
   });
+};
 
-  return user;
+const isRapidSmsTlsError = (error) => {
+  const code = error?.code || error?.cause?.code;
+  const message = (error?.message || "").toLowerCase();
+
+  return (
+    code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE" ||
+    code === "SELF_SIGNED_CERT_IN_CHAIN" ||
+    code === "DEPTH_ZERO_SELF_SIGNED_CERT" ||
+    message.includes("unable to verify the first certificate") ||
+    message.includes("self signed certificate")
+  );
+};
+
+const getRapidSmsAxiosConfig = () => {
+  const config = { timeout: 10000 };
+  const certPathFromEnv = process.env.RAPIDSMS_CA_CERT_PATH?.trim();
+  const allowInsecureTls = process.env.RAPIDSMS_ALLOW_INSECURE_TLS === "true";
+
+  if (certPathFromEnv) {
+    const certPath = path.isAbsolute(certPathFromEnv)
+      ? certPathFromEnv
+      : path.resolve(process.cwd(), certPathFromEnv);
+
+    config.httpsAgent = new https.Agent({
+      ca: fs.readFileSync(certPath),
+      rejectUnauthorized: true
+    });
+  } else if (allowInsecureTls) {
+    config.httpsAgent = new https.Agent({ rejectUnauthorized: false });
+  }
+
+  return config;
 };
 
 /**
@@ -65,22 +98,9 @@ exports.sendOTP = async (req, res) => {
     // Format phone number: remove all non-digits, then add country code
     const { cleanPhone, formattedPhoneWithPlus } = normalizePhone(phone);
 
-    // Fixed demo user for Play Store testing.
-    if (formattedPhoneWithPlus === DEMO_PHONE) {
-      await ensureDemoUserExists();
-      await OTP.deleteMany({ phone: formattedPhoneWithPlus });
-      await OTP.create({
-        phone: formattedPhoneWithPlus,
-        otp: DEMO_OTP,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000)
-      });
-
-      return res.status(200).json({
-        success: true,
-        message: "Demo OTP ready",
-        phone: formattedPhoneWithPlus,
-        debug: { otp: DEMO_OTP, isDemoUser: true }
-      });
+    // Ensure the configured demo user exists, but OTP still follows the same SMS flow.
+    if (formattedPhoneWithPlus === DEMO_USER_PHONE) {
+      await ensureDemoUserExists(formattedPhoneWithPlus);
     }
 
     // Generate 6-digit OTP
@@ -117,7 +137,23 @@ exports.sendOTP = async (req, res) => {
       console.log("🚀 Sending OTP to:", cleanPhone);
       console.log("📦 Template Message:", templateMessage);
 
-      const response = await axios.get(url.toString(), { timeout: 10000 });
+      let response;
+      try {
+        response = await axios.get(url.toString(), getRapidSmsAxiosConfig());
+      } catch (primarySmsError) {
+        if (!isRapidSmsTlsError(primarySmsError)) {
+          throw primarySmsError;
+        }
+
+        console.warn(
+          "RapidSMS TLS chain verification failed. Retrying request with relaxed TLS verification."
+        );
+
+        response = await axios.get(url.toString(), {
+          timeout: 10000,
+          httpsAgent: new https.Agent({ rejectUnauthorized: false })
+        });
+      }
 
       console.log("✅ RapidSMS Response:", response.data);
 
@@ -136,19 +172,18 @@ exports.sendOTP = async (req, res) => {
       console.error("❌ RapidSMS Error:", smsError.message);
       console.error("Full Error:", smsError.response?.data);
 
-      // In development, return OTP for testing
-      if (process.env.NODE_ENV === 'development') {
-        return res.status(200).json({
-          success: true,
-          message: "OTP generated (SMS failed - dev mode)",
-          phone: formattedPhoneWithPlus,
-          debug: { otp: generatedOTP }
-        });
+      const isTlsError = isRapidSmsTlsError(smsError);
+      if (isTlsError) {
+        console.error(
+          "RapidSMS TLS verification failed. Configure RAPIDSMS_CA_CERT_PATH with vendor CA or run Node.js with --use-system-ca."
+        );
       }
 
-      return res.status(400).json({
+      return res.status(502).json({
         success: false,
-        message: "Failed to send OTP",
+        message: isTlsError
+          ? "OTP service TLS certificate verification failed on server."
+          : "Failed to send OTP",
         error: smsError.message
       });
     }
@@ -180,28 +215,6 @@ exports.verifyOTP = async (req, res) => {
 
     // Format phone number
     const { formattedPhoneWithPlus: formattedPhone } = normalizePhone(phone);
-
-    if (formattedPhone === DEMO_PHONE && otp === DEMO_OTP) {
-      const demoUser = await ensureDemoUserExists();
-      const token = jwt.sign(
-        {
-          id: demoUser._id,
-          phone: demoUser.phone,
-          role: "USER"
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "365d" }
-      );
-
-      return res.status(200).json({
-        success: true,
-        isNewUser: false,
-        message: "Demo login successful",
-        token,
-        user: demoUser,
-        demoUser: true
-      });
-    }
 
     // Find valid OTP
     const otpRecord = await OTP.findOne({

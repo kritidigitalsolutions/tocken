@@ -3,6 +3,8 @@ const router = express.Router();
 
 const {
   adminLogin,
+  sendForgotPasswordOtp,
+  resetForgotPassword,
   sendCredentialOtp,
   verifyCredentialOtp,
   updateCredentials
@@ -13,6 +15,8 @@ const isAdmin = require("../../middleware/admin.middleware");
 
 // Public
 router.post("/login", adminLogin);
+router.post("/forgot-password/send-otp", sendForgotPasswordOtp);
+router.post("/forgot-password/reset", resetForgotPassword);
 
 // Protected — admin must be logged in
 // STEP 1: Request OTP (sent to current email)

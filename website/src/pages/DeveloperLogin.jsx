@@ -17,7 +17,6 @@ export default function DeveloperLogin() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
-  const [debugOtp, setDebugOtp] = useState('')
 
   const phoneWithCountry = useMemo(() => {
     if (phone.length !== 10) return ''
@@ -32,7 +31,6 @@ export default function DeveloperLogin() {
     event.preventDefault()
     setError('')
     setMessage('')
-    setDebugOtp('')
 
     if (phone.length !== 10) {
       setError('Please enter a valid 10-digit phone number.')
@@ -48,9 +46,6 @@ export default function DeveloperLogin() {
       })
 
       setMessage(response?.message || 'OTP sent successfully.')
-      if (response?.debug?.otp) {
-        setDebugOtp(response.debug.otp)
-      }
       setStep('otp')
     } catch (requestError) {
       setError(requestError.message || 'Unable to send OTP right now.')
@@ -166,7 +161,6 @@ export default function DeveloperLogin() {
 
         {message && <p className="dev-auth__message">{message}</p>}
         {error && <p className="dev-auth__error">{error}</p>}
-        {debugOtp && <p className="dev-auth__debug">Dev OTP: {debugOtp}</p>}
       </div>
     </div>
   )
