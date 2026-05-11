@@ -58,7 +58,8 @@ const userSchema = new mongoose.Schema(
       enum: [
         "AGENT",
         "BUILDER",
-        "INDIVIDUAL"
+        "INDIVIDUAL",
+        "DEVELOPER"
       ],
       default: "INDIVIDUAL"
     },

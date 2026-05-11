@@ -20,6 +20,7 @@ import {
   createPaymentOrder,
   createProject,
   fetchMyProjects,
+  getAllPlans,
   getPlanStatus,
   getPlansForType,
   updateProject,
@@ -217,6 +218,7 @@ export default function DeveloperPostProject() {
   const [plans, setPlans] = useState([])
   const [plansLoading, setPlansLoading] = useState(true)
   const [planStatus, setPlanStatus] = useState({ loading: true, hasActivePlan: false })
+  const [showAllPlans, setShowAllPlans] = useState(false)
 
   const [pendingOrder, setPendingOrder] = useState(null)
   const [checkingPayment, setCheckingPayment] = useState(false)
@@ -367,13 +369,13 @@ export default function DeveloperPostProject() {
           if (hasActivePlan) {
             setShowPlanActivatedPopup(true)
             setPendingOrder(null)
-            setStatus({ type: 'success', text: 'Plan purchase successful. Ab aap project submit kar sakte hain.' })
+            setStatus({ type: 'success', text: 'Plan purchase successful. You can now submit the project.' })
             return
           }
 
-          setStatus({ type: 'error', text: 'Payment callback aaya, lekin plan activate nahi hua. Please Check Payment Status.' })
+          setStatus({ type: 'error', text: 'The payment callback was received, but the plan was not activated. Please check the payment status.' })
         } catch {
-          setStatus({ type: 'error', text: 'Payment callback verify nahi ho paya. Please Check Payment Status.' })
+          setStatus({ type: 'error', text: 'Payment callback not verified. Please Check Payment Status.' })
         }
       }
 
@@ -395,16 +397,21 @@ export default function DeveloperPostProject() {
         const hasActivePlan = Boolean(planRes?.data?.hasActivePlan)
         const currentUserType = planRes?.data?.userType || user?.userType || 'BUILDER'
 
-        const preference = [currentUserType, 'BUILDER', 'DEVELOPER', 'INDIVIDUAL']
-        const uniqueTypes = [...new Set(preference)]
-
         let fetchedPlans = []
-        for (const type of uniqueTypes) {
-          const res = await getPlansForType(type, token)
-          const rows = res?.plans || []
-          if (rows.length) {
-            fetchedPlans = rows
-            break
+        if (showAllPlans) {
+          const res = await getAllPlans(token)
+          fetchedPlans = res?.plans || []
+        } else {
+          const preference = [currentUserType, 'BUILDER', 'DEVELOPER', 'INDIVIDUAL']
+          const uniqueTypes = [...new Set(preference)]
+
+          for (const type of uniqueTypes) {
+            const res = await getPlansForType(type, token)
+            const rows = res?.plans || []
+            if (rows.length) {
+              fetchedPlans = rows
+              break
+            }
           }
         }
 
@@ -429,7 +436,7 @@ export default function DeveloperPostProject() {
 
     loadPlanData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token])
+  }, [token, showAllPlans])
 
   useEffect(() => {
     if (!editProjectId) return
@@ -638,7 +645,8 @@ export default function DeveloperPostProject() {
 
     try {
       setSubmitting(true)
-      const res = await createPaymentOrder(form.selectedPlan, token)
+      const redirectBaseUrl = `${window.location.origin}/payment/status`
+      const res = await createPaymentOrder(form.selectedPlan, token, redirectBaseUrl)
       const nextPendingOrder = {
         merchantOrderId: res?.data?.merchantOrderId,
         redirectUrl: res?.data?.redirectUrl,
@@ -665,7 +673,7 @@ export default function DeveloperPostProject() {
 
         setStatus({
           type: 'success',
-          text: 'Payment page new tab me khul gaya hai. Payment complete karke yahan Check Payment Status karein.',
+          text: 'The payment page has opened in a new tab. Complete the payment, then check the payment status here.',
         })
         return
       }
@@ -680,7 +688,7 @@ export default function DeveloperPostProject() {
       setStatus({ type: 'error', text: 'Order created but redirect URL missing. Please try Purchase Selected Plan again.' })
     } catch (error) {
       try {
-        paymentWindow.document.write('<html><head><title>Payment Error</title></head><body style="font-family:Arial,sans-serif;padding:24px;">Payment order create nahi ho paya. Please close this tab and retry.</body></html>')
+        paymentWindow.document.write('<html><head><title>Payment Error</title></head><body style="font-family:Arial,sans-serif;padding:24px;">Payment order could not be created. Please close this tab and retry.</body></html>')
         paymentWindow.document.close()
       } catch {
         paymentWindow.close()
@@ -718,9 +726,9 @@ export default function DeveloperPostProject() {
         if (hasActivePlan) {
           setPendingOrder(null)
           setShowPlanActivatedPopup(true)
-          setStatus({ type: 'success', text: 'Plan purchase successful. Ab aap project submit kar sakte hain.' })
+          setStatus({ type: 'success', text: 'Plan purchase successful. You can now submit the project.' })
         } else {
-          setStatus({ type: 'error', text: 'Payment response success mila, lekin plan active nahi hua. Please try again.' })
+          setStatus({ type: 'error', text: 'Payment succeeded, but the plan was not activated. Please try again.' })
         }
       } else if (state === 'PENDING') {
         setStatus({ type: 'error', text: 'Payment is still pending. Complete payment and check again.' })
@@ -1021,7 +1029,7 @@ export default function DeveloperPostProject() {
       {step === 4 && (
         <div className="dev-planStep">
           <h2 className="dev-sectionTitle">Plan Purchase</h2>
-          <p className="dev-muted">Project post tab tak submit hoga jab active plan ho.</p>
+          <p className="dev-muted">The project can only be submitted after an active plan is in place.</p>
 
           {planStatus.loading || plansLoading ? <p>Loading plans...</p> : null}
           {!planStatus.loading ? (
@@ -1033,6 +1041,15 @@ export default function DeveloperPostProject() {
 
           {!planStatus.hasActivePlan ? (
             <>
+              <div className="dev-paymentActions" style={{ marginBottom: '12px' }}>
+                <button
+                  type="button"
+                  className="dev-btn dev-btn--ghost"
+                  onClick={() => setShowAllPlans((prev) => !prev)}
+                >
+                  {showAllPlans ? 'Show developer plans' : 'Show all plans'}
+                </button>
+              </div>
               <div className="dev-planGrid">
                 {plans.map((plan) => (
                   <button
@@ -1067,7 +1084,7 @@ export default function DeveloperPostProject() {
             </>
           ) : (
             <div className="dev-planActiveBanner">
-              <b>Plan already active.</b> Aap direct <b>Finish & Submit</b> kar sakte hain.
+              <b>Plan already active.</b> You can go straight to <b>Finish & Submit</b>.
             </div>
           )}
         </div>
@@ -1079,7 +1096,7 @@ export default function DeveloperPostProject() {
         <div className="dev-modalOverlay" role="dialog" aria-modal="true">
           <div className="dev-modalCard">
             <h3>Plan Purchase Successful</h3>
-            <p>Payment successful. Ab aap project submit kar sakte hain.</p>
+            <p>Payment successful. You can now submit the project.</p>
             <button type="button" className="dev-btn dev-btn--primary" onClick={() => setShowPlanActivatedPopup(false)}>
               Continue
             </button>

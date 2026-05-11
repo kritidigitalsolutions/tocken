@@ -19,6 +19,27 @@ const normalizePhone = (phone = "") => {
 
 const DEMO_USER_PHONE = normalizePhone(process.env.DEMO_USER_PHONE || "9999999999").formattedPhoneWithPlus;
 
+const generateUsername = async () => {
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  const generateRandomLetters = (length = 4) => {
+    let result = "";
+    for (let i = 0; i < length; i += 1) {
+      result += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    return result;
+  };
+
+  let username;
+  do {
+    const randomLetters = generateRandomLetters(4);
+    const randNum = Math.floor(1000 + Math.random() * 9000);
+    username = `${randomLetters}${randNum}`;
+  } while (await User.findOne({ username }));
+
+  return username;
+};
+
 const ensureDemoUserExists = async (phone) => {
   const existingUser = await User.findOne({ phone });
   if (existingUser) {
@@ -237,12 +258,16 @@ exports.verifyOTP = async (req, res) => {
     let user = await User.findOne({ phone: formattedPhone });
 
     if (!user) {
-      // New user - tell frontend to show profile completion form
-      return res.status(200).json({
-        success: true,
-        isNewUser: true,
-        message: "New user. Please complete your profile.",
-        phone: formattedPhone
+      const username = await generateUsername();
+
+      user = await User.create({
+        phone: formattedPhone,
+        username,
+        name: "User",
+        firstName: "",
+        lastName: "",
+        email: "",
+        userType: "DEVELOPER"
       });
     }
 
@@ -259,7 +284,7 @@ exports.verifyOTP = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      isNewUser: false,
+      isNewUser: !user?.name || user.name === "User",
       message: "Login successful",
       token,
       user: user

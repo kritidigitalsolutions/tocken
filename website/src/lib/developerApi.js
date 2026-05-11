@@ -9,13 +9,17 @@ export async function getPlansForType(userType, token) {
   return apiRequest(`/api/plans?userType=${query}`, {}, token)
 }
 
-export async function createPaymentOrder(planId, token) {
+export async function getAllPlans(token) {
+  return apiRequest('/api/plans?all=true', {}, token)
+}
+
+export async function createPaymentOrder(planId, token, redirectBaseUrl) {
   return apiRequest(
     '/api/payments/create-order',
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planId }),
+      body: JSON.stringify({ planId, redirectBaseUrl }),
     },
     token
   )

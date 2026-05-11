@@ -121,7 +121,7 @@ app.post("/test", (req, res) => {
 
 //   await Admin.create({
 //     name: "Super Admin",
-//     email: "admin@realestate.com",
+//     email: "admin@gmail.com",
 //     password: hashedPassword
 //   });
 

@@ -73,7 +73,7 @@ export default function DeveloperLogin() {
       })
 
       if (!response?.token) {
-        setError('This phone number is not fully registered yet. Please complete user signup in the mobile app first, then login here.')
+        setError('Login failed. Please try again.')
         return
       }
 

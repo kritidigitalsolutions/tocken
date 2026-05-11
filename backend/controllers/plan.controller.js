@@ -3,10 +3,20 @@ const FAQ = require("../models/faq.model");
 const User = require("../models/user.model");
 
 exports.getPlansAndFAQs = async (req, res) => {
-  const { userType } = req.query;
+  const { userType, all } = req.query;
 
-  const plans = await Plan.find({ userType, isActive: true });
-  const faqs = await FAQ.find({ userType, isActive: true });
+  const planFilter = { isActive: true };
+  if (!all && userType) {
+    planFilter.userType = userType;
+  }
+
+  const faqFilter = { isActive: true };
+  if (userType) {
+    faqFilter.userType = userType;
+  }
+
+  const plans = await Plan.find(planFilter);
+  const faqs = await FAQ.find(faqFilter);
 
   res.json({
     success: true,

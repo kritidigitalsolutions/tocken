@@ -10,7 +10,7 @@ const { sendPushNotification } = require("../utils/fcm.service");
 //  PHONEPE_CLIENT_ID      = SU2506051830126509239028
 //  PHONEPE_CLIENT_SECRET  = fe89fc12-aed6-4c78-847a-ec1f6h676987
 //  PHONEPE_CLIENT_VERSION = 1
-//  PHONEPE_REDIRECT_URL   = http://localhost:3000/payment/status
+//  PHONEPE_REDIRECT_URL   = http://localhost:5173/payment/status
 //  PHONEPE_ENV            = SANDBOX | PRODUCTION
 // ─────────────────────────────────────────────────────────────
 const IS_SANDBOX = (process.env.PHONEPE_ENV || "SANDBOX").toUpperCase() !== "PRODUCTION";
@@ -90,12 +90,12 @@ async function sendPlanPurchaseNotification(user, plan, endDate) {
   }
 }
 //  POST /api/payments/create-order
-//  Body: { planId }
+//  Body: { planId, redirectBaseUrl? }
 //  Returns: { merchantOrderId, redirectUrl }   ← redirect user here
 // ═══════════════════════════════════════════════════════
 exports.createOrder = async (req, res) => {
   try {
-    const { planId } = req.body;
+    const { planId, redirectBaseUrl } = req.body;
     if (!planId)
       return res.status(400).json({ success: false, message: "planId is required" });
 
@@ -119,7 +119,15 @@ exports.createOrder = async (req, res) => {
     const merchantOrderId = `ORD_${user._id}_${Date.now()}`;
 
     // Redirect URL — include merchantOrderId so frontend can poll status
-    const redirectUrl = `${process.env.PHONEPE_REDIRECT_URL}/${merchantOrderId}`;
+    const redirectBase = typeof redirectBaseUrl === "string" && redirectBaseUrl.trim()
+      ? redirectBaseUrl.trim()
+      : process.env.PHONEPE_REDIRECT_URL;
+    const normalizedBase = redirectBase?.replace(/\/+$/, "");
+    if (!normalizedBase) {
+      return res.status(500).json({ success: false, message: "PHONEPE_REDIRECT_URL is not configured" });
+    }
+
+    const redirectUrl = `${normalizedBase}/${merchantOrderId}`;
 
     // ── Get PhonePe access token ──
     const token = await getAccessToken();
@@ -164,7 +172,7 @@ exports.createOrder = async (req, res) => {
         planName:      plan.planName,
         price:         plan.price,
         validityDays:  plan.validityDays,
-        leadsPerMonth: plan.leadsPerMonth,
+        leadsPerMonth: plan.planLimit || 0,
         userType:      plan.userType
       }
     });
@@ -206,8 +214,8 @@ exports.checkStatus = async (req, res) => {
 
     // Already activated → return immediately
     if (payment.status === "SUCCESS") {
-      const user = await User.findById(payment.user).populate("activePlan").select("activePlan planSubscription leadQuota");
-      return res.json({ success: true, message: "Plan already activated", data: { status: "SUCCESS", planSubscription: user?.planSubscription, leadQuota: user?.leadQuota } });
+      const user = await User.findById(payment.user).populate("activePlan").select("activePlan planSubscription planUsageQuota");
+      return res.json({ success: true, message: "Plan already activated", data: { status: "SUCCESS", planSubscription: user?.planSubscription, planUsageQuota: user?.planUsageQuota } });
     }
 
     // ── Ask PhonePe for latest status ──
@@ -234,7 +242,7 @@ exports.checkStatus = async (req, res) => {
       const updatedUser = await User.findByIdAndUpdate(payment.user, {
         activePlan:       plan._id,
         planSubscription: { startDate, endDate, isActive: true, autoRenewal: false },
-        leadQuota:        { consumed: 0, limit: plan.leadsPerMonth, resetDate: quotaResetDate }
+        planUsageQuota:   { consumed: 0, limit: plan.planLimit || 0, resetDate: quotaResetDate }
       }, { new: true });
 
       // ── Notify user ──
@@ -264,7 +272,7 @@ exports.checkStatus = async (req, res) => {
           status:      "SUCCESS",
           planName:    plan.planName,
           validUntil:  endDate,
-          leadQuota:   { consumed: 0, limit: plan.leadsPerMonth }
+          planUsageQuota: { consumed: 0, limit: plan.planLimit || 0 }
         }
       });
     }
@@ -324,7 +332,7 @@ exports.webhook = async (req, res) => {
       await User.findByIdAndUpdate(payment.user, {
         activePlan:       plan._id,
         planSubscription: { startDate, endDate, isActive: true, autoRenewal: false },
-        leadQuota:        { consumed: 0, limit: plan.leadsPerMonth, resetDate: quotaResetDate }
+        planUsageQuota:   { consumed: 0, limit: plan.planLimit || 0, resetDate: quotaResetDate }
       });
 
       // ── Notify user (webhook path) ──
