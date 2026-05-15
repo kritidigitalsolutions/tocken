@@ -136,6 +136,9 @@ export default function Footer() {
               © 2025 (Crackjack Creative Studio Pvt Ltd). All rights reserved.
             </p>
           </div>
+          <div className="footer__bottom-dev">
+            <p>Design & Develop by <a href="https://www.kritidigital.com/">Kriti digital Solution</a></p>
+          </div>
         </div>
       </div>
     </footer>
