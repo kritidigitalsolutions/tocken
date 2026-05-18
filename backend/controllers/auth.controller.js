@@ -18,6 +18,7 @@ const normalizePhone = (phone = "") => {
 };
 
 const DEMO_USER_PHONE = normalizePhone(process.env.DEMO_USER_PHONE || "9999999999").formattedPhoneWithPlus;
+const DEMO_USER_OTP = process.env.DEMO_USER_OTP || "123456";
 
 const generateUsername = async () => {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -237,22 +238,29 @@ exports.verifyOTP = async (req, res) => {
     // Format phone number
     const { formattedPhoneWithPlus: formattedPhone } = normalizePhone(phone);
 
-    // Find valid OTP
-    const otpRecord = await OTP.findOne({
-      phone: formattedPhone,
-      otp: otp,
-      expiresAt: { $gt: new Date() }
-    });
+    let otpRecord = null;
 
-    if (!otpRecord) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid or expired OTP"
+    if (formattedPhone === DEMO_USER_PHONE && otp === DEMO_USER_OTP) {
+      // Demo user uses a static OTP; skip OTP lookup.
+      await ensureDemoUserExists(formattedPhone);
+    } else {
+      // Find valid OTP
+      otpRecord = await OTP.findOne({
+        phone: formattedPhone,
+        otp: otp,
+        expiresAt: { $gt: new Date() }
       });
-    }
 
-    // Delete used OTP
-    await OTP.deleteOne({ _id: otpRecord._id });
+      if (!otpRecord) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid or expired OTP"
+        });
+      }
+
+      // Delete used OTP
+      await OTP.deleteOne({ _id: otpRecord._id });
+    }
 
     // Check if user exists
     let user = await User.findOne({ phone: formattedPhone });
